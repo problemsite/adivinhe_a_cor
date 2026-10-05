@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Adivinhe a COR</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/game.css">
+</head>
+<body>
+<div id="bg"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><canvas id="bgPaint"></canvas><div class="dots"></div></div>
+
+<main>
+  <!-- CARREGANDO -->
+  <section id="scr-loading" class="screen show">
+    <div class="loader"><i></i><i></i><i></i><i></i></div>
+  </section>
+
+  <!-- LOBBY -->
+  <section id="scr-lobby" class="screen">
+    <h1 class="title" id="title"></h1>
+    <div class="subtitle" id="lobbySub">2 jogadores · quem chegar mais perto da cor original pontua!</div>
+    <div class="slots">
+      <div class="slot p1" id="slot-p1"></div>
+      <div class="vs">VS</div>
+      <div class="slot p2" id="slot-p2"></div>
+    </div>
+    <div class="lobby-bottom">
+      <button class="btn" id="readyBtn" style="display:none">ESTOU PRONTO!</button>
+      <div id="lobbyStatus"></div>
+    </div>
+  </section>
+
+  <!-- RODADA -->
+  <section id="scr-play" class="screen">
+    <header class="topbar">
+      <div class="mini p1" id="pm-p1"></div>
+      <div class="round-pill" id="playRound">ROUND 1 de 10</div>
+      <div class="mini p2" id="pm-p2"></div>
+    </header>
+    <div class="img-card loading" id="imgCard">
+      <canvas id="playCanvas"></canvas>
+      <div class="spin loader"><i></i><i></i><i></i><i></i></div>
+    </div>
+    <div class="picker-panel" id="picker">
+      <div class="pk-body">
+        <div class="bars">
+          <div class="vbar hue" id="barH" title="Matiz"><div class="knob"></div></div>
+          <div class="vbar" id="barS" title="Saturação"><div class="knob"></div></div>
+          <div class="vbar" id="barB" title="Brilho"><div class="knob"></div></div>
+        </div>
+        <div class="swatch" id="swatch">
+          <div class="sw-label">Qual é a cor de verdade?<small>arraste as 3 barras</small></div>
+          <button class="done-round" id="doneBtn" title="Pronto!">✔</button>
+          <div class="waiting" id="waitBox">
+            <div><b>COR CONFIRMADA! 🔒</b><span id="waitTxt">Esperando o outro jogador</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="spect-msg">👀 Você está assistindo esta partida</div>
+    </div>
+  </section>
+
+  <!-- REVELAÇÃO -->
+  <section id="scr-reveal" class="screen">
+    <header class="topbar">
+      <div class="mini p1" id="rm-p1"></div>
+      <div class="round-pill" id="revRound">ROUND 1 de 10</div>
+      <div class="mini p2" id="rm-p2"></div>
+    </header>
+    <div class="reveal-row" id="revealRow"></div>
+    <div class="verdict-zone">
+      <div class="verdict" id="verdict"></div>
+      <button class="btn gold" id="nextBtn">PRÓXIMO ROUND ▶</button>
+      <div class="confirm-row" id="confirmRow"></div>
+    </div>
+  </section>
+
+  <!-- FINAL -->
+  <section id="scr-final" class="screen">
+    <div class="final-title" id="finalTitle"></div>
+    <div class="podium" id="podium"></div>
+    <div class="final-msg" id="finalMsg"></div>
+    <div class="round-chips" id="roundChips"></div>
+    <div class="final-actions"><button class="btn" id="againBtn">VOLTAR AO LOBBY</button><div class="confirm-row" id="backInfo"></div></div>
+  </section>
+</main>
+
+<!-- INTRO (pingos de tinta) -->
+<div class="overlay" id="intro">
+  <canvas id="introCanvas"></canvas>
+  <div class="intro-content">
+    <div class="ic-round" id="icRound">ROUND 1</div>
+    <div class="ic-sub" id="icSub">de 10</div>
+    <div class="ic-players" id="icPlayers"></div>
+    <div class="ic-lead" id="icLead"></div>
+  </div>
+</div>
+
+<!-- SUSPENSE -->
+<div class="overlay" id="suspense">
+  <div class="sus-box">
+    <div class="sus-wrap"><div class="ring" id="susRing"></div><div class="ring-q">?</div></div>
+    <div class="sus-text">HORA DA VERDADE…</div>
+    <div class="sus-sub">Quem chegou mais perto da cor original?</div>
+  </div>
+</div>
+
+<!-- PERFIL -->
+<div class="modal" id="profileModal">
+  <div class="box">
+    <h2 id="pfTitle">Seu perfil</h2>
+    <div class="crop" id="crop"><img id="cropImg" alt=""><div class="ph" id="cropPh">J1</div></div>
+    <div class="crop-hint" id="cropHint">Clique em "Escolher foto". Arraste para posicionar e use o zoom para recortar.</div>
+    <div class="zoomrow"><span>🔍</span><input type="range" id="zoom" min="1" max="4" step="0.01" value="1"><span>🔎</span></div>
+    <div class="row">
+      <button class="btn small" id="pickPhoto">📷 Escolher foto</button>
+      <button class="btn ghost small" id="rmPhoto">Remover foto</button>
+    </div>
+    <div class="namefield"><input id="nameIn" maxlength="16" placeholder="Seu nome" autocomplete="off"></div>
+    <div class="row">
+      <button class="btn ghost" id="pfCancel">Cancelar</button>
+      <button class="btn green" id="pfSave">SALVAR</button>
+    </div>
+    <input type="file" id="fileIn" accept="image/*" hidden>
+  </div>
+</div>
+
+<!-- CONFIRMAR COR -->
+<div class="modal" id="confirmModal">
+  <div class="box confirm-box">
+    <h2>Tem certeza?</h2>
+    <div class="cf-sw" id="cfSw"></div>
+    <p>Depois de confirmar você <b>não pode mais mudar</b> a sua cor.</p>
+    <div class="row">
+      <button class="btn ghost" id="cfNo">Voltar</button>
+      <button class="btn green" id="cfYes">SIM, CONFIRMAR! ✔</button>
+    </div>
+  </div>
+</div>
+
+<div id="flash"></div>
+<canvas id="fx"></canvas>
+<div id="toasts"></div>
+<div class="corner"><button id="muteBtn" title="Som">🔊</button><span id="modeBadge"></span></div>
+
+<script src="js/firebase-config.js"></script>
+<script src="js/color.js"></script>
+<script src="js/db.js"></script>
+<script src="js/recolor.js"></script>
+<script src="js/sfx.js"></script>
+<script src="js/fx.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
