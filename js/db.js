@@ -98,9 +98,9 @@
     const base = `https://www.gstatic.com/firebasejs/${V}/`;
     let db;
     const ready = (async () => {
-      await loadScript(base + "firebase-app-compat.js");
-      await loadScript(base + "firebase-auth-compat.js");
-      await loadScript(base + "firebase-database-compat.js");
+      if (!window.firebase) await loadScript(base + "firebase-app-compat.js");
+      if (!firebase.auth) await loadScript(base + "firebase-auth-compat.js");
+      if (!firebase.database) await loadScript(base + "firebase-database-compat.js");
       if (!firebase.apps.length) firebase.initializeApp(cfg);
       // espera a sessão salva (ex.: login de ADM) antes de decidir
       const user = await new Promise((res) => { const u = firebase.auth().onAuthStateChanged((x) => { u(); res(x); }); });

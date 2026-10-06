@@ -843,19 +843,8 @@
   DB.on("imageIndex", (v) => { S.imageIndex = v || {}; renderLobbyStatus(); checkAutoStart(); });
   }
 
-  // ---------------- jogo liberado / bloqueado (controlado pelo ADM) ----------------
-  let subsStarted = false, wasClosed = false;
-  function setLocked(on) { $("#lockScreen").classList.toggle("on", on); }
-  if (DB.mode === "local") { startSubs(); subsStarted = true; }
-  else {
-    DB.on("settings/open", (v) => {
-      const open = v === true;
-      if (!open) { wasClosed = true; setLocked(true); return; }
-      if (wasClosed && subsStarted) { location.reload(); return; }
-      setLocked(false);
-      if (!subsStarted) { subsStarted = true; startSubs(); }
-    }, () => setLocked(true));
-  }
+  // ---------------- liberado/bloqueado: controlado pela trava (/trava.js) ----------------
+  startSubs();
 
   // ---------------- início ----------------
   buildTitle();

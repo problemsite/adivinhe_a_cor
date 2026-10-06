@@ -28,7 +28,7 @@ Enquanto o `js/firebase-config.js` estiver com `COLE_AQUI`, o jogo roda **só no
   }
 }
 ```
-4. Cole o config do app web em `js/firebase-config.js` (substitua tudo que tem `COLE_AQUI` / `SEU-PROJETO`).
+4. O `js/firebase-config.js` já aponta para o Firebase único (jogos-github), pasta `sites/adivinhe_a_cor`.
 5. Suba a pasta no GitHub Pages. Abra `/ADM/` e importe o `bob-esponja.json` de novo (agora vai pro Firebase).
 
 ## 3. Como funciona
@@ -53,13 +53,5 @@ Enquanto o `js/firebase-config.js` estiver com `COLE_AQUI`, o jogo roda **só no
   - ⬇ exporta cada rodada em .json (backup), 📤 exporta todas.
 
 
-## 5. Segurança (chave do ADM + liberar/bloquear jogo)
-A proteção fica nas **regras do Firebase** — não adianta alguém mexer no site, o banco recusa.
-
-1. Firebase → **Authentication → Método de login → E-mail/senha → Ativar**.
-2. Authentication → **Usuários → Adicionar usuário**: e-mail e senha que estão no arquivo `chave-adm.json` (abra no Bloco de Notas e copie).
-3. Realtime Database → **Regras**: cole o conteúdo de `regras-firebase.json` e **Publicar**.
-4. Abra `/ADM/`, arraste a `chave-adm.json`. Pronto: o navegador fica logado (botão 🔐 *Trancar ADM* para sair).
-5. No ADM, **Liberar jogo / Bloquear jogo**. Fica salvo no Firebase — vale mesmo com o ADM fechado.
-
-⚠️ **Nunca** suba a `chave-adm.json` no GitHub. Guarde só no seu PC (e um backup).
+## 5. Segurança
+Usa o Firebase único (jogos-github) e a trava do site principal (`/trava.js`). O ADM só abre em navegadores liberados.

@@ -7,6 +7,10 @@
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 <link rel="icon" href="../favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="/trava.js" data-site="adivinhe_a_cor" data-modo="adm"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
@@ -140,7 +144,6 @@
   <h1>Adivinhe a <span class="c1">C</span><span class="c2">O</span><span class="c3">R</span> — ADM</h1>
   <span class="pill" id="modePill">…</span>
   <span class="sp"></span>
-  <button class="btn ghost sm" id="bLogout" style="display:none">🔐 Trancar ADM</button>
   <a href="../" target="_blank">abrir o jogo ↗</a>
 </header>
 
@@ -288,18 +291,6 @@
         <div id="brushCur"></div>
       </div>
     </div>
-  </div>
-</div>
-
-<!-- LOGIN COM A CHAVE -->
-<div id="gate" class="on">
-  <div class="gate-box" id="gateBox" style="visibility:hidden">
-    <div style="font-size:64px">🔑</div>
-    <h2>ADM trancado</h2>
-    <p>Arraste aqui (ou escolha) o arquivo <b>chave-adm.json</b> para entrar.</p>
-    <button class="btn green" id="gatePick">Escolher chave .json</button>
-    <div class="gate-err" id="gateErr"></div>
-    <input type="file" id="gateFile" accept=".json,application/json" hidden>
   </div>
 </div>
 
