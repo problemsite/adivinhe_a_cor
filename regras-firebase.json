@@ -1,0 +1,16 @@
+{
+  "rules": {
+    "adivinheacor": {
+      ".read": "auth != null && (auth.token.email === 'adm@adivinhar-cor.app' || root.child('adivinheacor/settings/open').val() === true)",
+      ".write": "auth != null && auth.token.email === 'adm@adivinhar-cor.app'",
+      "settings": {
+        "open": { ".read": "auth != null" }
+      },
+      "players": { ".write": "auth != null && root.child('adivinheacor/settings/open').val() === true" },
+      "game":    { ".write": "auth != null && root.child('adivinheacor/settings/open').val() === true" },
+      "picks":   { ".write": "auth != null && root.child('adivinheacor/settings/open').val() === true" },
+      "results": { ".write": "auth != null && root.child('adivinheacor/settings/open').val() === true" },
+      "back":    { ".write": "auth != null && root.child('adivinheacor/settings/open').val() === true" }
+    }
+  }
+}

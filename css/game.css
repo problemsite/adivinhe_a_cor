@@ -392,3 +392,13 @@ main { position: fixed; inset: 0; z-index: 1; }
 .cf-sw { width: calc(var(--u)*16); height: calc(var(--u)*16); border-radius: calc(var(--u)*3); border: calc(var(--u)*0.6) solid #fff;
   box-shadow: 0 0 0 calc(var(--u)*0.4) rgba(0,0,0,.6), 0 calc(var(--u)*1.2) calc(var(--u)*3) rgba(0,0,0,.5); animation: cfBob 1.6s ease-in-out infinite; }
 @keyframes cfBob { 50% { transform: translateY(calc(var(--u)*-0.8)) rotate(-3deg); } }
+
+/* ---------- jogo fechado ---------- */
+.lock-screen { position: fixed; inset: 0; z-index: 95; display: none; place-items: center; background: rgba(12,9,30,.82); backdrop-filter: blur(10px); }
+.lock-screen.on { display: grid; animation: lockIn .5s ease; }
+@keyframes lockIn { from { opacity: 0; } }
+.lock-box { text-align: center; display: flex; flex-direction: column; align-items: center; gap: calc(var(--u)*1.6); }
+.lock-box h2 { font-family: "Lilita One"; font-weight: 400; font-size: calc(var(--u)*8); text-shadow: 0 calc(var(--u)*0.7) 0 #2b2360; }
+.lock-box p { font-size: calc(var(--u)*3); font-weight: 900; }
+.lock-box small { color: var(--mut); font-size: calc(var(--u)*1.9); font-weight: 800; }
+.lock-drop { font-size: calc(var(--u)*10); animation: crownBob 2s ease-in-out infinite; }

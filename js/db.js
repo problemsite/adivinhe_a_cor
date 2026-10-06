@@ -80,7 +80,8 @@
         return { committed: true, value: clone(r) };
       },
       presence() { return () => {}; },
-      async wipeAll() { tree = {}; save(); }
+      async wipeAll() { tree = {}; save(); },
+      auth: { async email() { return "modo-local"; }, async signIn() { return "modo-local"; }, async signOut() {} }
     };
   }
 
@@ -101,20 +102,24 @@
       await loadScript(base + "firebase-auth-compat.js");
       await loadScript(base + "firebase-database-compat.js");
       if (!firebase.apps.length) firebase.initializeApp(cfg);
-      try { await firebase.auth().signInAnonymously(); }
-      catch (e) { console.warn("Auth anônima não ativada (ok se as regras estiverem abertas):", e.message); }
+      // espera a sessão salva (ex.: login de ADM) antes de decidir
+      const user = await new Promise((res) => { const u = firebase.auth().onAuthStateChanged((x) => { u(); res(x); }); });
+      if (!user && !window.DB_ADMIN_PAGE) {
+        try { await firebase.auth().signInAnonymously(); }
+        catch (e) { console.warn("Auth anônima não ativada:", e.message); }
+      }
       db = firebase.database();
     })();
     const ref = (p) => db.ref(split(ROOT).concat(split(p)).join("/"));
     return {
       mode: "firebase",
       ready,
-      on(path, cb) {
+      on(path, cb, onErr) {
         let off = false, r, h;
         ready.then(() => {
           if (off) return;
           r = ref(path); h = (s) => cb(s.val());
-          r.on("value", h, (err) => console.error("leitura negada", path, err));
+          r.on("value", h, (err) => { console.warn("leitura negada", path, err && err.message); if (onErr) onErr(err); });
         });
         return () => { off = true; if (r) r.off("value", h); };
       },
@@ -149,7 +154,13 @@
           ready.then(() => ref(path).onDisconnect().cancel());
         };
       },
-      async wipeAll() { await ready; return ref("").remove(); }
+      async wipeAll() { await ready; return ref("").remove(); },
+      // login de administrador (chave .json)
+      auth: {
+        async email() { await ready; const u = firebase.auth().currentUser; return u && !u.isAnonymous ? u.email : null; },
+        async signIn(email, senha) { await ready; await firebase.auth().signInWithEmailAndPassword(email, senha); return firebase.auth().currentUser.email; },
+        async signOut() { await ready; await firebase.auth().signOut(); }
+      }
     };
   }
 

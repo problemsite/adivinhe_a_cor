@@ -598,10 +598,73 @@
   });
 
   // ---------------- assinaturas ----------------
+  function startAdm() {
   DB.on("players", (v) => { S.players = v || {}; renderPlayers(); renderLive(); renderResults(); });
   DB.on("game", (g) => { S.game = g || { phase: "lobby" }; renderGame(); renderPlayers(); syncLive(); renderResults(); });
   DB.on("results", (v) => { S.results = v || {}; renderGame(); renderPlayers(); renderResults(); });
   DB.on("imageIndex", (v) => { S.imageIndex = v || {}; renderGame(); });
+  DB.on("settings/open", (v) => renderOpen(v === true || DB.mode === "local"));
+  }
+
+  // ---------------- jogo liberado / bloqueado ----------------
+  let isOpen = false;
+  function renderOpen(open) {
+    isOpen = open;
+    $("#openBox").className = "openbox " + (open ? "open" : "closed");
+    $("#openTitle").textContent = open ? "🔓 Jogo LIBERADO" : "🔒 Jogo BLOQUEADO";
+    $("#openSub").textContent = open ? "Qualquer pessoa com o link pode jogar agora." : "Ninguém consegue ver nem jogar. Libere na hora de gravar.";
+    $("#bOpen").textContent = open ? "Bloquear jogo" : "Liberar jogo";
+    $("#bOpen").className = "btn " + (open ? "red" : "green");
+  }
+  $("#bOpen").addEventListener("click", async () => {
+    try { await DB.set("settings/open", !isOpen); toast(!isOpen ? "Jogo liberado!" : "Jogo bloqueado."); }
+    catch (e) { toast("Sem permissão: " + e.message, true); }
+  });
+
+  // ---------------- chave do ADM ----------------
+  const gate = $("#gate"), gateBox = $("#gateBox");
+  async function checkAdmin() {
+    // só é ADM de verdade se o Firebase aceitar uma escrita na área protegida
+    try { await DB.set("settings/lastAdmin", Date.now()); return true; } catch (e) { return false; }
+  }
+  async function enter() {
+    gate.classList.remove("on");
+    $("#bLogout").style.display = DB.mode === "local" ? "none" : "";
+    startAdm();
+  }
+  async function tryKeyFile(file) {
+    $("#gateErr").textContent = "";
+    try {
+      const k = JSON.parse(await file.text());
+      if (!k.email || !k.senha) throw new Error("Arquivo não é uma chave válida.");
+      busy(true, "Entrando…");
+      await DB.auth.signIn(k.email, k.senha);
+      if (!(await checkAdmin())) { await DB.auth.signOut(); throw new Error("Essa chave não tem permissão de ADM (confira as regras do Firebase)."); }
+      busy(false); toast("Bem-vindo(a)! 🔓"); enter();
+    } catch (e) {
+      busy(false);
+      const m = /wrong-password|invalid-credential|user-not-found|INVALID_LOGIN/i.test(e.code || e.message) ? "Chave incorreta." : e.message;
+      $("#gateErr").textContent = m;
+    }
+  }
+  $("#gatePick").addEventListener("click", () => $("#gateFile").click());
+  $("#gateFile").addEventListener("change", (e) => { const f = e.target.files[0]; e.target.value = ""; if (f) tryKeyFile(f); });
+  ["dragenter", "dragover"].forEach((ev) => gate.addEventListener(ev, (e) => { e.preventDefault(); gateBox.classList.add("over"); }));
+  ["dragleave", "drop"].forEach((ev) => gate.addEventListener(ev, (e) => { e.preventDefault(); gateBox.classList.remove("over"); }));
+  gate.addEventListener("drop", (e) => { const f = e.dataTransfer.files[0]; if (f) tryKeyFile(f); });
+  $("#bLogout").addEventListener("click", async () => {
+    if (!confirm("Trancar o ADM neste navegador? Para entrar de novo vai precisar da chave .json.")) return;
+    await DB.auth.signOut(); location.reload();
+  });
+  (async () => {
+    if (DB.mode === "local") return enter();
+    try {
+      const email = await DB.auth.email();
+      if (email && (await checkAdmin())) return enter();
+      if (email) await DB.auth.signOut();
+    } catch (e) {}
+    gate.classList.add("on"); gateBox.style.visibility = "";
+  })();
 
   window.__ADM = { S, E, openEditor };
 })();

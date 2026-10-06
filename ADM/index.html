@@ -119,6 +119,18 @@
   .framebox { position: relative; margin-top: 8px; width: 100%; aspect-ratio: 1.242; border-radius: 10px; overflow: hidden; background: #000; border: 2px solid #ffffff30; cursor: grab; touch-action: none; }
   .framebox.drag { cursor: grabbing; }
   .framebox .fr-tag { position: absolute; z-index: 3; right: 6px; bottom: 6px; background: #000a; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 900; }
+  #gate { position: fixed; inset: 0; z-index: 200; background: #0d0b18; display: none; place-items: center; }
+  #gate.on { display: grid; }
+  .gate-box { width: 440px; max-width: 92vw; text-align: center; background: var(--panel); border: 2px dashed #ffffff30; border-radius: 22px; padding: 34px 26px; display: flex; flex-direction: column; align-items: center; gap: 14px; transition: border-color .2s, transform .2s; }
+  .gate-box.over { border-color: var(--ok); transform: scale(1.02); }
+  .gate-box h2 { font-size: 30px; }
+  .gate-box p { color: var(--mut); font-size: 15px; }
+  .gate-err { color: var(--bad); font-size: 14px; min-height: 18px; }
+  .openbox { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-radius: 14px; border: 2px solid #ffffff20; background: #0003; }
+  .openbox b { display: block; font-family: "Lilita One"; font-weight: 400; font-size: 20px; }
+  .openbox span { display: block; font-size: 12px; color: var(--mut); }
+  .openbox.open { border-color: #2ee59d88; background: #2ee59d14; }
+  .openbox.closed { border-color: #ff4d6d88; background: #ff4d6d12; }
   #busy { position: fixed; inset: 0; background: #0009; z-index: 99; display: none; place-items: center; font-family: "Lilita One"; font-size: 26px; }
   #busy.on { display: grid; }
 </style>
@@ -128,6 +140,7 @@
   <h1>Adivinhe a <span class="c1">C</span><span class="c2">O</span><span class="c3">R</span> — ADM</h1>
   <span class="pill" id="modePill">…</span>
   <span class="sp"></span>
+  <button class="btn ghost sm" id="bLogout" style="display:none">🔐 Trancar ADM</button>
   <a href="../" target="_blank">abrir o jogo ↗</a>
 </header>
 
@@ -135,6 +148,10 @@
   <div class="col">
     <section class="panel">
       <h2>🎮 Partida</h2>
+      <div class="openbox" id="openBox">
+        <div><b id="openTitle">…</b><span id="openSub"></span></div>
+        <button class="btn" id="bOpen">…</button>
+      </div>
       <div class="status">
         <div class="stat"><small>Fase</small><b id="stPhase">—</b></div>
         <div class="stat"><small>Round</small><b id="stRound">—</b></div>
@@ -274,9 +291,22 @@
   </div>
 </div>
 
+<!-- LOGIN COM A CHAVE -->
+<div id="gate" class="on">
+  <div class="gate-box" id="gateBox" style="visibility:hidden">
+    <div style="font-size:64px">🔑</div>
+    <h2>ADM trancado</h2>
+    <p>Arraste aqui (ou escolha) o arquivo <b>chave-adm.json</b> para entrar.</p>
+    <button class="btn green" id="gatePick">Escolher chave .json</button>
+    <div class="gate-err" id="gateErr"></div>
+    <input type="file" id="gateFile" accept=".json,application/json" hidden>
+  </div>
+</div>
+
 <div id="busy">Processando…</div>
 <div id="toasts"></div>
 
+<script>window.DB_ADMIN_PAGE = true;</script>
 <script src="../js/firebase-config.js"></script>
 <script src="../js/color.js"></script>
 <script src="../js/db.js"></script>
