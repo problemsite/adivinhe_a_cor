@@ -15,6 +15,12 @@
   --p1d: #1d4ed8;
   --p2: #ef4444;
   --p2d: #b91c1c;
+  --p3: #22c55e; --p3d: #15803d;
+  --p4: #f59e0b; --p4d: #b45309;
+  --p5: #a855f7; --p5d: #7e22ce;
+  --p6: #ec4899; --p6d: #be185d;
+  --p7: #06b6d4; --p7d: #0e7490;
+  --p8: #f97316; --p8d: #c2410c;
   --gold: #ffc531;
   --ok: #2ee59d;
   --c1: #ff3b5c; --c2: #ffb800; --c3: #2ee59d; --c4: #3ba0ff; --c5: #a45cff; --c6: #ff6ad5;
@@ -70,16 +76,18 @@ main { position: fixed; inset: 0; z-index: 1; }
 .btn.gold { --b: #f5a400; --bd: #b77800; color: #2a1a00; text-shadow: none; }
 .btn.ghost { --b: rgba(255,255,255,.1); --bd: rgba(0,0,0,.35); }
 .btn.small { font-size: calc(var(--u)*1.8); padding: calc(var(--u)*0.8) calc(var(--u)*1.6); border-radius: calc(var(--u)*1.2); }
-.btn.p1 { --b: var(--p1); --bd: var(--p1d); }
-.btn.p2 { --b: var(--p2); --bd: var(--p2d); }
+/* cor de cada vaga (J1…J8): --pc = cor, --pcd = escura */
+.p1 { --pc: var(--p1); --pcd: var(--p1d); } .p2 { --pc: var(--p2); --pcd: var(--p2d); }
+.p3 { --pc: var(--p3); --pcd: var(--p3d); } .p4 { --pc: var(--p4); --pcd: var(--p4d); }
+.p5 { --pc: var(--p5); --pcd: var(--p5d); } .p6 { --pc: var(--p6); --pcd: var(--p6d); }
+.p7 { --pc: var(--p7); --pcd: var(--p7d); } .p8 { --pc: var(--p8); --pcd: var(--p8d); }
+.btn.p1, .btn.p2, .btn.p3, .btn.p4, .btn.p5, .btn.p6, .btn.p7, .btn.p8 { --b: var(--pc); --bd: var(--pcd); }
 
 /* ---------- avatar ---------- */
 .avatar { position: relative; border-radius: 50%; display: grid; place-items: center; overflow: hidden; flex: none;
   background: var(--pc, #555); color: #fff; font-family: "Lilita One", sans-serif;
   box-shadow: 0 0 0 calc(var(--u)*0.5) rgba(255,255,255,.9), 0 calc(var(--u)*0.8) calc(var(--u)*2) rgba(0,0,0,.4); }
 .avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.avatar.p1 { --pc: var(--p1); }
-.avatar.p2 { --pc: var(--p2); }
 .avatar span { line-height: 1; text-shadow: 0 3px 0 rgba(0,0,0,.25); }
 
 /* ---------- LOBBY ---------- */
@@ -103,8 +111,6 @@ main { position: fixed; inset: 0; z-index: 1; }
   background: var(--card); border: calc(var(--u)*0.35) solid var(--line); backdrop-filter: blur(6px);
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: calc(var(--u)*1.6);
   box-shadow: 0 calc(var(--u)*2) calc(var(--u)*5) rgba(0,0,0,.35); transition: transform .3s cubic-bezier(.2,.9,.3,1.4), border-color .3s, box-shadow .3s; }
-.slot.p1 { --pc: var(--p1); }
-.slot.p2 { --pc: var(--p2); }
 .slot.filled { border-color: color-mix(in srgb, var(--pc) 70%, transparent);
   box-shadow: 0 0 calc(var(--u)*4) color-mix(in srgb, var(--pc) 35%, transparent), 0 calc(var(--u)*2) calc(var(--u)*5) rgba(0,0,0,.35); }
 .slot.ready { transform: translateY(calc(var(--u)*-1)) scale(1.02); }
@@ -124,6 +130,28 @@ main { position: fixed; inset: 0; z-index: 1; }
 @keyframes vsPulse { 50% { transform: scale(1.12) rotate(-6deg); } }
 @keyframes popIn { 0% { transform: scale(0); } 70% { transform: scale(1.2); } 100% { transform: scale(1); } }
 
+.slot .info { display: contents; }
+.slot.pop { animation: slotIn .55s cubic-bezier(.2,.9,.3,1.3) both; }
+@keyframes slotIn { from { opacity: 0; transform: translateY(calc(var(--u)*3)) scale(.85); } }
+.slot.free { border-style: dashed; }
+/* 3 ou 4 jogadores: fileira de cartões um pouco menores */
+.slots.s4 { gap: calc(var(--u)*3); top: 30vh; }
+.slots.s4 .slot { width: calc(var(--u)*30); height: calc(var(--u)*36); }
+.slots.s4 .slot .avatar { width: calc(var(--u)*13); height: calc(var(--u)*13); font-size: calc(var(--u)*6); }
+.slots.s4 .slot .name { font-size: calc(var(--u)*3.2); }
+/* 5 a 8 jogadores: 2 fileiras de cartões deitados */
+.slots.s8 { top: 28vh; width: calc(var(--u)*152); flex-wrap: wrap; justify-content: center; gap: calc(var(--u)*3.4) calc(var(--u)*2.4); }
+.slots.s8 .slot { width: calc(var(--u)*36); height: calc(var(--u)*14.5); flex-direction: row; justify-content: flex-start; gap: calc(var(--u)*1.6); padding: 0 calc(var(--u)*1.6); border-radius: calc(var(--u)*2.6); }
+.slots.s8 .slot .info { display: flex; flex-direction: column; align-items: flex-start; gap: calc(var(--u)*0.5); min-width: 0; flex: 1; }
+.slots.s8 .slot .avatar { width: calc(var(--u)*9.5); height: calc(var(--u)*9.5); font-size: calc(var(--u)*4.4); }
+.slots.s8 .slot .name { font-size: calc(var(--u)*2.8); max-width: 100%; }
+.slots.s8 .slot .state { height: auto; font-size: calc(var(--u)*1.6); }
+.slots.s8 .slot .ready-badge { font-size: calc(var(--u)*1.7); padding: calc(var(--u)*0.2) calc(var(--u)*1.2); }
+.slots.s8 .slot .tag { font-size: calc(var(--u)*1.7); top: calc(var(--u)*-1.5); left: calc(var(--u)*2.2); transform: none; padding: calc(var(--u)*0.3) calc(var(--u)*1.3); }
+.slots.s8 .slot .acts .btn.small { font-size: calc(var(--u)*1.5); padding: calc(var(--u)*0.5) calc(var(--u)*1.1); }
+.slots.s8 .slot .acts:empty { display: none; }
+.slots.s8 .slot .me-tag { top: calc(var(--u)*1); right: calc(var(--u)*1.4); font-size: calc(var(--u)*1.4); }
+.slots.s8 .slot .online { top: auto; bottom: calc(var(--u)*1.2); left: calc(var(--u)*1.4); }
 .lobby-bottom { position: absolute; top: 74vh; left: 50%; transform: translateX(-50%); width: calc(var(--u)*82); display: flex; flex-direction: column; align-items: center; gap: calc(var(--u)*1.4); }
 #readyBtn { font-size: calc(var(--u)*3.4); padding: calc(var(--u)*1.8) calc(var(--u)*6); }
 #readyBtn.on { --b: var(--ok); --bd: #12945f; color: #053b25; text-shadow: none; }
@@ -131,23 +159,37 @@ main { position: fixed; inset: 0; z-index: 1; }
 #lobbyStatus b { color: #fff; }
 
 /* ---------- topo (jogo/revelação) ---------- */
-.topbar { position: absolute; top: 2.2vh; left: 2.5vw; right: 2.5vw; height: calc(var(--u)*9); display: flex; align-items: center; justify-content: space-between; }
+.topbar { position: absolute; top: 2.2vh; left: 2.5vw; right: calc(1.2vw + var(--u)*6.5); height: calc(var(--u)*9); display: flex; align-items: center; justify-content: space-between; }
 .round-pill { font-family: "Lilita One"; font-size: calc(var(--u)*3.4); padding: calc(var(--u)*0.8) calc(var(--u)*3); border-radius: 99px;
   background: linear-gradient(90deg, var(--c1), var(--c2), var(--c3), var(--c4), var(--c5), var(--c1)); background-size: 200% 100%; animation: slideGrad 7s linear infinite;
   box-shadow: 0 calc(var(--u)*0.7) 0 rgba(0,0,0,.35); text-shadow: 0 3px 0 rgba(0,0,0,.25); white-space: nowrap; }
 @keyframes slideGrad { from { background-position: 0% 0; } to { background-position: -200% 0; } }
 .mini { display: flex; align-items: center; gap: calc(var(--u)*1.3); background: var(--card); border: 2px solid var(--line); border-radius: 99px;
   padding: calc(var(--u)*0.7) calc(var(--u)*2.2) calc(var(--u)*0.7) calc(var(--u)*0.7); min-width: calc(var(--u)*30); }
-.mini.p2 { flex-direction: row-reverse; padding: calc(var(--u)*0.7) calc(var(--u)*0.7) calc(var(--u)*0.7) calc(var(--u)*2.2); text-align: right; }
+.mini.rev { flex-direction: row-reverse; padding: calc(var(--u)*0.7) calc(var(--u)*0.7) calc(var(--u)*0.7) calc(var(--u)*2.2); text-align: right; }
 .mini .avatar { width: calc(var(--u)*6.5); height: calc(var(--u)*6.5); font-size: calc(var(--u)*3); box-shadow: 0 0 0 calc(var(--u)*0.35) #fff; }
 .mini .info { display: flex; flex-direction: column; line-height: 1.05; min-width: 0; }
 .mini .nm { font-family: "Lilita One"; font-size: calc(var(--u)*2.5); max-width: calc(var(--u)*18); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mini .st { font-size: calc(var(--u)*1.6); color: var(--mut); font-weight: 800; }
 .mini .st.ok { color: var(--ok); }
 .mini .sc { font-family: "Lilita One"; font-size: calc(var(--u)*5); margin-left: auto; padding-left: calc(var(--u)*1.5); line-height: 1; }
-.mini.p2 .sc { margin-left: 0; margin-right: auto; padding-left: 0; padding-right: calc(var(--u)*1.5); }
-.mini.p1 { border-color: color-mix(in srgb, var(--p1) 60%, transparent); }
-.mini.p2 { border-color: color-mix(in srgb, var(--p2) 60%, transparent); }
+.mini.rev .sc { margin-left: 0; margin-right: auto; padding-left: 0; padding-right: calc(var(--u)*1.5); }
+.mini { border-color: color-mix(in srgb, var(--pc, #fff) 60%, transparent); }
+/* 3 ou mais: fileira compacta (avatar, nome, pontos) */
+.topbar.multi { justify-content: flex-start; gap: calc(var(--u)*2); }
+.topbar.multi .round-pill { font-size: calc(var(--u)*2.8); padding: calc(var(--u)*0.7) calc(var(--u)*2.2); flex: none; }
+.tb-players { flex: 1; min-width: 0; display: flex; justify-content: flex-end; align-items: center; gap: calc(var(--u)*1); }
+.mini.compact { position: relative; min-width: 0; flex: 0 1 calc(var(--u)*28); gap: calc(var(--u)*0.9); padding: calc(var(--u)*0.5) calc(var(--u)*1.6) calc(var(--u)*0.5) calc(var(--u)*0.5);
+  transition: border-color .3s, background .3s; }
+.mini.compact .avatar { width: calc(var(--u)*5.6); height: calc(var(--u)*5.6); font-size: calc(var(--u)*2.6); }
+.mini.compact .nm { flex: 1; min-width: 0; max-width: none; font-size: calc(var(--u)*2.1); }
+.mini.compact .sc { font-size: calc(var(--u)*3.6); padding-left: calc(var(--u)*0.6); margin-left: 0; }
+.mini.compact.ok { border-color: var(--ok); background: rgba(46,229,157,.12); }
+.mini.compact.me { box-shadow: 0 0 0 calc(var(--u)*0.25) rgba(255,197,49,.55); }
+.mini.compact .okb { position: absolute; left: calc(var(--u)*4); bottom: calc(var(--u)*0.1); width: calc(var(--u)*2.6); height: calc(var(--u)*2.6); border-radius: 50%;
+  background: var(--ok); color: #053b25; font-style: normal; font-size: calc(var(--u)*1.6); font-weight: 900; display: grid; place-items: center; animation: popIn .4s cubic-bezier(.2,.9,.3,1.6); box-shadow: 0 0 0 2px #15122b; }
+.topbar.many .mini.compact { flex: 0 1 calc(var(--u)*12); padding-right: calc(var(--u)*1.4); justify-content: space-between; }
+.topbar.many .mini.compact .nm { display: none; }
 .mini.bump { animation: bump .5s cubic-bezier(.2,.9,.3,1.6); }
 @keyframes bump { 40% { transform: scale(1.12); } }
 .dots-anim::after { content: "…"; display: inline-block; animation: dotsA 1.2s steps(4) infinite; width: 1.2em; overflow: hidden; vertical-align: bottom; }
@@ -160,6 +202,10 @@ main { position: fixed; inset: 0; z-index: 1; }
 .img-card canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
 .img-card { overflow: hidden; }
 .img-card .spin { position: absolute; }
+/* zoom com a rodinha: arrastar só quando está com zoom */
+.zoomable { touch-action: none; }
+.zoomable.zoomed { cursor: grab; }
+.zoomable.panning { cursor: grabbing; }
 .img-card.loading canvas { opacity: 0; }
 .img-card:not(.loading) .spin { display: none; }
 
@@ -200,8 +246,7 @@ main { position: fixed; inset: 0; z-index: 1; }
 .rwrap { position: relative; height: 100%; perspective: 1600px; opacity: 0; transform: translateY(calc(var(--u)*4)) scale(.9);
   transition: opacity .35s ease, transform .6s cubic-bezier(.2,.9,.3,1.3); }
 .rwrap.in { opacity: 1; transform: none; }
-.rwrap.p1 { --cc: var(--p1); }
-.rwrap.p2 { --cc: var(--p2); }
+.rwrap { --cc: var(--pc, var(--gold)); }
 .rwrap.orig { --cc: var(--gold); }
 .rcard { position: relative; height: 100%; transform-style: preserve-3d; transform: rotateY(180deg); transition: transform .8s cubic-bezier(.3,1.4,.4,1); }
 .rcard.flipped { transform: rotateY(0deg); }
@@ -235,12 +280,42 @@ main { position: fixed; inset: 0; z-index: 1; }
 .rcard .bar { flex: none; height: calc(var(--u)*1.2); background: rgba(255,255,255,.1); }
 .rcard .bar i { display: block; height: 100%; width: 0; background: var(--cc); transition: width 1.2s cubic-bezier(.2,.8,.2,1); }
 .rwrap.orig .who { justify-content: center; }
+.rcard .who b { min-width: 0; }
+.rcard .codes { overflow: hidden; }
+.rcard .rank { margin-left: auto; flex: none; font-family: "Lilita One"; font-size: calc(var(--u)*2); background: rgba(0,0,0,.4); padding: calc(var(--u)*0.1) calc(var(--u)*1); border-radius: 99px;
+  opacity: 0; transform: scale(.4); transition: all .45s cubic-bezier(.2,.9,.3,1.6); }
+.rcard .rank.show { opacity: 1; transform: none; }
+/* 3 a 8 jogadores: original à esquerda + grade de cartas menores */
+.reveal-row.multi { gap: 1.4vw; }
+.rv-grid { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); grid-template-rows: repeat(var(--rows), minmax(0, 1fr)); gap: calc(var(--u)*2.6) 1.2vw; height: 100%; min-height: 0; }
+.reveal-row.multi.r2 .rv-grid { gap: calc(var(--u)*3.4) 1vw; }
+.rwrap.compact .rcard .face, .rwrap.compact .rcard .back { border-radius: calc(var(--u)*2.2); }
+.rwrap.compact .who { padding: calc(var(--u)*0.6) calc(var(--u)*1); gap: calc(var(--u)*0.7); }
+.rwrap.compact .who .avatar { width: calc(var(--u)*3.4); height: calc(var(--u)*3.4); font-size: calc(var(--u)*1.7); }
+.rwrap.compact .who b { font-size: calc(var(--u)*2.1); }
+.rwrap.compact .data { padding: calc(var(--u)*0.8) calc(var(--u)*1); gap: calc(var(--u)*0.9); }
+.rwrap.compact .chip { width: calc(var(--u)*4.6); height: calc(var(--u)*4.6); border-radius: calc(var(--u)*1.1); border-width: calc(var(--u)*0.35); }
+.rwrap.compact .hex { font-size: calc(var(--u)*2.4); }
+.rwrap.compact .rgb { font-size: calc(var(--u)*1.35); }
+.rwrap.compact .acc .pct { font-size: calc(var(--u)*2.7); }
+.rwrap.compact .acc .de { font-size: calc(var(--u)*1.35); }
+.rwrap.compact .bar { height: calc(var(--u)*0.9); }
+.rwrap.compact .back { font-size: calc(var(--u)*9); }
+.rwrap.compact .crown { font-size: calc(var(--u)*4.6); top: calc(var(--u)*-3.6); }
+.rwrap.compact .lose-tag { font-size: calc(var(--u)*2.3); padding: calc(var(--u)*0.4) calc(var(--u)*1.4); top: 30%; }
+.rwrap.compact .rgb { display: none; }
+.rwrap.compact .codes .hex { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.reveal-row.r2 .rwrap.compact .acc .de { display: none; }
+/* quem não ganhou (3+): fica um pouco para trás, sem tirar a cor da imagem */
+.rwrap.in.lose-soft { transform: translateY(calc(var(--u)*1.2)) scale(.95); opacity: .78; }
+.rwrap.lose-soft .who, .rwrap.lose-soft .back { filter: grayscale(.7) brightness(.7); }
+.rwrap.lose-soft .face { border-color: rgba(255,255,255,.18); }
 .rwrap.win { animation: winBounce .7s cubic-bezier(.2,.9,.3,1.5); }
 .rwrap.win .face { box-shadow: 0 0 calc(var(--u)*5) var(--cc), 0 0 calc(var(--u)*1.5) var(--cc); }
 @keyframes winBounce { 0% { transform: scale(1); } 40% { transform: scale(1.07) translateY(calc(var(--u)*-2)); } 100% { transform: scale(1); } }
 /* perdedor: a carta "cai" e fica tombada */
 .rwrap.lose { animation: fallL 1.1s cubic-bezier(.3,.7,.3,1) forwards; transform-origin: 50% 100%; }
-.rwrap.p2.lose { animation-name: fallR; }
+.reveal-row.duo > .rwrap:last-child.lose { animation-name: fallR; }
 .rwrap.lose .who, .rwrap.lose .back { filter: grayscale(.7) brightness(.7); }
 .rwrap.lose .face { border-color: rgba(255,255,255,.18); }
 @keyframes fallL { 0% { transform: none; } 35% { transform: translateY(calc(var(--u)*-1.5)) rotate(2deg); } 70% { transform: translateY(calc(var(--u)*3.2)) rotate(-7deg); } 85% { transform: translateY(calc(var(--u)*2.2)) rotate(-4deg); } 100% { transform: translate(calc(var(--u)*2), calc(var(--u)*2.6)) rotate(-5deg); } }
@@ -253,12 +328,16 @@ main { position: fixed; inset: 0; z-index: 1; }
 .confirm-row { display: flex; align-items: center; gap: calc(var(--u)*1.4); flex-wrap: wrap; }
 .cchip { display: inline-flex; align-items: center; gap: calc(var(--u)*0.6); padding: calc(var(--u)*0.5) calc(var(--u)*1.4) calc(var(--u)*0.5) calc(var(--u)*0.5); border-radius: 99px; background: var(--card); border: 2px solid var(--line); font-size: calc(var(--u)*1.8); font-weight: 900; color: var(--mut); }
 .cchip .avatar { width: calc(var(--u)*3.4); height: calc(var(--u)*3.4); font-size: calc(var(--u)*1.6); box-shadow: 0 0 0 2px #fff; }
+.confirm-row.compact { gap: calc(var(--u)*0.8); }
+.cchip.mini-c { padding: calc(var(--u)*0.3) calc(var(--u)*0.9) calc(var(--u)*0.3) calc(var(--u)*0.3); gap: calc(var(--u)*0.4); }
+.cchip.mini-c i { font-style: normal; font-size: calc(var(--u)*1.6); }
 .cchip.ok { border-color: var(--ok); color: var(--ok); animation: popIn .4s cubic-bezier(.2,.9,.3,1.6); }
 #nextBtn.waiting-other { --b: #3a344f; --bd: #1f1b33; color: #cfc9f5; }
 
 .verdict-zone { position: absolute; left: 2.5vw; top: 72vh; width: 58vw; height: 24vh; display: flex; flex-direction: column; justify-content: center; gap: calc(var(--u)*2); }
 .verdict { font-family: "Lilita One"; font-size: calc(var(--u)*5.6); line-height: 1.05; opacity: 0; transform: translateY(20px) scale(.9); transition: all .5s cubic-bezier(.2,.9,.3,1.5); }
 .verdict.show { opacity: 1; transform: none; }
+.verdict.multi { font-size: calc(var(--u)*4.6); }
 .verdict small { display: block; font-family: "Nunito"; font-weight: 800; font-size: calc(var(--u)*2.1); color: var(--mut); margin-top: calc(var(--u)*0.6); }
 #nextBtn { align-self: flex-start; opacity: 0; transform: translateY(15px); pointer-events: none; transition: opacity .4s, transform .4s; }
 #nextBtn.show { opacity: 1; transform: none; pointer-events: auto; }
@@ -278,15 +357,37 @@ main { position: fixed; inset: 0; z-index: 1; }
 .pod .pts { font-family: "Lilita One"; font-size: calc(var(--u)*6); line-height: 1; }
 .pod .pts small { font-size: .4em; color: var(--mut); }
 .pod.loser { opacity: .75; }
+/* 3 a 8 jogadores: pódio (2º · 1º · 3º) + o resto em fileira */
+.podium.multi { top: 19.5vh; flex-direction: column; align-items: center; gap: calc(var(--u)*2.2); }
+.pod-top { display: flex; align-items: flex-end; justify-content: center; gap: calc(var(--u)*2); }
+.podium.multi .pod { width: calc(var(--u)*24); gap: calc(var(--u)*0.8); }
+.podium.multi .pod .avatar { width: calc(var(--u)*10); height: calc(var(--u)*10); font-size: calc(var(--u)*4.6); }
+.podium.multi .pod.champ .avatar { width: calc(var(--u)*13); height: calc(var(--u)*13); font-size: calc(var(--u)*6); box-shadow: 0 0 0 calc(var(--u)*0.6) var(--gold), 0 0 calc(var(--u)*4) rgba(255,197,49,.55); }
+.podium.multi .pod .nm { font-size: calc(var(--u)*2.8); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.podium.multi .pod .pts { font-size: calc(var(--u)*4); }
+.podium.multi .pod .crown2 { top: calc(var(--u)*-6); font-size: calc(var(--u)*6.5); }
+.pod .step { width: 100%; display: grid; place-items: center; font-family: "Lilita One"; font-size: calc(var(--u)*3.2); color: #fff; text-shadow: 0 calc(var(--u)*0.3) 0 rgba(0,0,0,.3);
+  border-radius: calc(var(--u)*1.6) calc(var(--u)*1.6) calc(var(--u)*0.6) calc(var(--u)*0.6); background: linear-gradient(var(--pc), var(--pcd)); box-shadow: 0 calc(var(--u)*0.6) 0 rgba(0,0,0,.3);
+  transform-origin: 50% 100%; animation: stepUp .7s cubic-bezier(.2,.9,.3,1.3) both .5s; }
+@keyframes stepUp { from { transform: scaleY(0); } }
+.pod.p-1 .step { height: calc(var(--u)*7); }
+.pod.p-2 .step { height: calc(var(--u)*5); }
+.pod.p-3 .step { height: calc(var(--u)*3.6); }
+.pod-rest { display: flex; flex-wrap: wrap; justify-content: center; gap: calc(var(--u)*1.2); max-width: calc(var(--u)*150); }
+.pr { display: flex; align-items: center; gap: calc(var(--u)*0.8); padding: calc(var(--u)*0.5) calc(var(--u)*1.8) calc(var(--u)*0.5) calc(var(--u)*0.6); border-radius: 99px;
+  background: rgba(20,16,45,.78); border: calc(var(--u)*0.3) solid color-mix(in srgb, var(--pc) 70%, transparent);
+  opacity: 0; animation: rcIn .45s cubic-bezier(.2,.9,.3,1.4) forwards; animation-delay: calc(.9s + var(--d) * .08s); }
+.pr .pl { font-family: "Lilita One"; font-size: calc(var(--u)*2.2); color: var(--mut); padding-left: calc(var(--u)*0.6); }
+.pr .avatar { width: calc(var(--u)*4); height: calc(var(--u)*4); font-size: calc(var(--u)*1.9); box-shadow: 0 0 0 calc(var(--u)*0.25) #fff; }
+.pr b { font-family: "Lilita One"; font-weight: 400; font-size: calc(var(--u)*2.2); max-width: calc(var(--u)*16); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pr .pp { font-family: "Lilita One"; font-size: calc(var(--u)*2.6); }
 .final-msg { position: absolute; top: 59.5vh; left: 0; right: 0; text-align: center; font-family: "Lilita One"; font-size: calc(var(--u)*4.4); color: var(--gold); }
 .round-chips { position: absolute; top: 67vh; left: 50%; transform: translateX(-50%); width: 58vw; display: grid; grid-template-columns: repeat(5, 1fr); gap: calc(var(--u)*1.2); }
 .rcard2 { display: flex; flex-direction: row; align-items: center; gap: calc(var(--u)*0.9); padding: calc(var(--u)*0.7); border-radius: calc(var(--u)*1.6);
   background: rgba(20,16,45,.78); border: calc(var(--u)*0.3) solid var(--line); backdrop-filter: blur(4px); min-width: 0;
   opacity: 0; transform: translateY(12px) scale(.9); animation: rcIn .45s cubic-bezier(.2,.9,.3,1.4) forwards; animation-delay: calc(.6s + var(--d)); }
 @keyframes rcIn { to { opacity: 1; transform: none; } }
-.rcard2.w1 { border-color: var(--p1); }
-.rcard2.w2 { border-color: var(--p2); }
-.rcard2.wt { border-color: var(--gold); }
+.rcard2 { border-color: var(--wc, var(--line)); }
 .rc-info { display: flex; flex-direction: column; gap: calc(var(--u)*0.3); min-width: 0; flex: 1; }
 .rc-n { font-family: "Lilita One"; font-size: calc(var(--u)*2.4); color: #fff; text-shadow: 0 0 calc(var(--u)*0.5) #000, 0 calc(var(--u)*0.2) 0 #000; }
 .rc-nm { font-size: calc(var(--u)*1.45); font-weight: 900; color: #d9d4ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -317,15 +418,33 @@ main { position: fixed; inset: 0; z-index: 1; }
 .ic-players { display: flex; align-items: center; gap: calc(var(--u)*6); margin-top: calc(var(--u)*2); }
 .ic-p { display: flex; align-items: center; gap: calc(var(--u)*1.8); background: rgba(20,16,50,.88); border: calc(var(--u)*0.4) solid var(--pc); border-radius: 99px; padding: calc(var(--u)*0.9) calc(var(--u)*3) calc(var(--u)*0.9) calc(var(--u)*0.9);
   opacity: 0; transition: transform .6s cubic-bezier(.2,.9,.3,1.3), opacity .4s; position: relative; }
-.ic-p.p1 { --pc: var(--p1); transform: translateX(-60vw); }
-.ic-p.p2 { --pc: var(--p2); transform: translateX(60vw); flex-direction: row-reverse; padding: calc(var(--u)*0.9) calc(var(--u)*0.9) calc(var(--u)*0.9) calc(var(--u)*3); }
+.ic-p.l { transform: translateX(-60vw); }
+.ic-p.r { transform: translateX(60vw); flex-direction: row-reverse; padding: calc(var(--u)*0.9) calc(var(--u)*0.9) calc(var(--u)*0.9) calc(var(--u)*3); }
 .ic-p.in { transform: none; opacity: 1; }
 .ic-p .avatar { width: calc(var(--u)*11); height: calc(var(--u)*11); font-size: calc(var(--u)*5); }
 .ic-p .nm { font-family: "Lilita One"; font-size: calc(var(--u)*3.4); max-width: calc(var(--u)*24); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ic-p .pt { font-family: "Lilita One"; font-size: calc(var(--u)*7); line-height: 1; }
 .ic-p.lead { box-shadow: 0 0 calc(var(--u)*4) var(--gold); border-color: var(--gold); }
 .ic-p.lead::before { content: "👑"; position: absolute; top: calc(var(--u)*-5); left: calc(var(--u)*3); font-size: calc(var(--u)*6); animation: crownBob 1.2s ease-in-out infinite; }
-.ic-p.p2.lead::before { left: auto; right: calc(var(--u)*3); }
+.ic-p.r.lead::before { left: auto; right: calc(var(--u)*3); }
+/* 3 a 8 jogadores: placar em fileira */
+.ic-players.grid { gap: calc(var(--u)*2); margin-top: calc(var(--u)*3); }
+.ic-c { position: relative; display: flex; flex-direction: column; align-items: center; gap: calc(var(--u)*0.8); width: calc(var(--u)*24); padding: calc(var(--u)*2.2) calc(var(--u)*1) calc(var(--u)*1.6);
+  border-radius: calc(var(--u)*3); background: rgba(20,16,50,.9); border: calc(var(--u)*0.4) solid var(--pc); box-shadow: 0 calc(var(--u)*1) calc(var(--u)*3) rgba(0,0,0,.4);
+  opacity: 0; transform: translateY(calc(var(--u)*6)) scale(.8);
+  transition: transform .55s cubic-bezier(.2,.9,.3,1.4) calc(var(--d) * .07s), opacity .35s ease calc(var(--d) * .07s); }
+.ic-c.in { opacity: 1; transform: none; }
+.ic-c .avatar { width: calc(var(--u)*11); height: calc(var(--u)*11); font-size: calc(var(--u)*5); }
+.ic-c .nm { font-family: "Lilita One"; font-size: calc(var(--u)*2.9); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ic-c .pt { font-family: "Lilita One"; font-size: calc(var(--u)*5); line-height: 1; }
+.ic-c .pt small { font-size: .42em; color: var(--mut); }
+.ic-c .pl { position: absolute; top: calc(var(--u)*-1.8); left: calc(var(--u)*-1.2); font-family: "Lilita One"; font-size: calc(var(--u)*2.4); background: #1a1440; border: calc(var(--u)*0.3) solid #fff; border-radius: 99px; padding: 0 calc(var(--u)*1); }
+.ic-c.lead { border-color: var(--gold); box-shadow: 0 0 calc(var(--u)*4) var(--gold); }
+.ic-c.lead::before { content: "👑"; position: absolute; top: calc(var(--u)*-5.4); left: 50%; margin-left: calc(var(--u)*-3); font-size: calc(var(--u)*5.6); animation: crownBob 1.2s ease-in-out infinite; }
+.ic-players.g8 .ic-c { width: calc(var(--u)*17.5); padding-top: calc(var(--u)*1.8); }
+.ic-players.g8 .ic-c .avatar { width: calc(var(--u)*8.4); height: calc(var(--u)*8.4); font-size: calc(var(--u)*4); }
+.ic-players.g8 .ic-c .nm { font-size: calc(var(--u)*2.3); }
+.ic-players.g8 .ic-c .pt { font-size: calc(var(--u)*4); }
 .ic-vs { font-family: "Lilita One"; font-size: calc(var(--u)*5); color: var(--gold); text-shadow: 0 calc(var(--u)*0.5) 0 #000; opacity: 0; transition: opacity .3s; }
 .ic-vs.in { opacity: 1; }
 .ic-lead { font-family: "Lilita One"; font-size: calc(var(--u)*4); color: #fff; text-shadow: 0 calc(var(--u)*0.5) 0 #1a1440, 0 0 calc(var(--u)*3) rgba(0,0,0,.6); opacity: 0; transform: translateY(20px); transition: all .5s cubic-bezier(.2,.9,.3,1.5); }
@@ -348,9 +467,10 @@ main { position: fixed; inset: 0; z-index: 1; }
 .sus-sub { color: var(--mut); font-size: calc(var(--u)*2.6); font-weight: 800; }
 
 #fx { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 70; pointer-events: none; }
-#flash { position: fixed; inset: 0; z-index: 65; background: #fff; opacity: 0; pointer-events: none; }
-#flash.go { animation: flash .5s ease-out; }
-@keyframes flash { 0% { opacity: .85; } 100% { opacity: 0; } }
+/* brilho suave na revelação (nada de clarão: fotossensibilidade) */
+#flash { position: fixed; inset: 0; z-index: 65; background: radial-gradient(circle at 50% 42%, rgba(255,236,170,.55), rgba(255,236,170,0) 60%); opacity: 0; pointer-events: none; }
+#flash.go { animation: flash 1.1s ease-out; }
+@keyframes flash { 0% { opacity: 0; } 30% { opacity: .5; } 100% { opacity: 0; } }
 
 /* ---------- toasts / misc ---------- */
 #toasts { position: fixed; top: 2vh; left: 50%; transform: translateX(-50%); z-index: 90; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; }
@@ -359,7 +479,9 @@ main { position: fixed; inset: 0; z-index: 1; }
 .toast.out { animation: toastOut .35s forwards; }
 @keyframes toastIn { from { transform: translateY(-30px) scale(.8); opacity: 0; } }
 @keyframes toastOut { to { transform: translateY(-20px); opacity: 0; } }
-.corner { position: fixed; right: 1.2vw; bottom: 1.6vh; flex-direction: row-reverse; z-index: 80; display: flex; gap: 8px; align-items: center; }
+/* som e selo do modo teste ficam no canto de CIMA (o de baixo à direita é da câmera) */
+.corner { position: fixed; right: 1.2vw; top: 1.6vh; flex-direction: row-reverse; z-index: 80; display: flex; gap: 8px; align-items: center; }
+body:has(#scr-play.show) #modeBadge, body:has(#scr-reveal.show) #modeBadge { display: none; }
 .corner button { background: rgba(255,255,255,.08); color: #fff; border: 2px solid var(--line); border-radius: 99px; width: calc(var(--u)*5); height: calc(var(--u)*5); font-size: calc(var(--u)*2.2); opacity: .55; transition: opacity .2s; }
 .corner button:hover { opacity: 1; }
 .mode-badge { background: #f59e0b; color: #241400; font-weight: 900; font-size: calc(var(--u)*1.5); padding: 4px 10px; border-radius: 99px; }
