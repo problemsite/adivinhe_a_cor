@@ -177,6 +177,107 @@ window.Recolor = (function () {
     bg.width = Math.max(1, Math.round(canvas.width * k)); bg.height = Math.max(1, Math.round(canvas.height * k));
     bg.getContext("2d").drawImage(canvas, 0, 0, bg.width, bg.height);
   };
+
+  // ---------- ENCAIXE (jogo): a imagem inteira, centralizada, sem cortar ----------
+  // Com frame (do ADM) usa o centro/zoom dele, mas a parte pintada nunca fica cortada.
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+  Recolor.base = function (cw, ch, W, H, box, frame) {
+    const contain = Math.min(cw / W, ch / H);
+    let s = contain, cx = W / 2, cy = H / 2;
+    if (frame && frame.z) {
+      box = box || { x0: 0, y0: 0, x1: W - 1, y1: H - 1 };
+      const bw = box.x1 - box.x0 + 1, bh = box.y1 - box.y0 + 1;
+      const sBox = Math.min(cw / (bw * 1.08), ch / (bh * 1.08));
+      s = Math.max(contain, Math.min(Math.max(cw / W, ch / H) * frame.z, sBox));
+      const hw = cw / 2 / s, hh = ch / 2 / s, mx = bw * 0.04, my = bh * 0.04;
+      cx = clamp(frame.cx * W, box.x1 + mx - hw, box.x0 - mx + hw);
+      cy = clamp(frame.cy * H, box.y1 + my - hh, box.y0 - my + hh);
+    }
+    return { s, cx, cy };
+  };
+  // posiciona: imagem maior que o quadro = sem sobrar borda; menor = centralizada
+  Recolor.place = function (cw, ch, W, H, s, cx, cy) {
+    const vw = cw / s, vh = ch / s;
+    cx = W <= vw ? W / 2 : clamp(cx, vw / 2, W - vw / 2);
+    cy = H <= vh ? H / 2 : clamp(cy, vh / 2, H - vh / 2);
+    const dw = W * s, dh = H * s;
+    return { left: cw / 2 - cx * s, top: ch / 2 - cy * s, dw, dh, s, cx, cy, gaps: dw < cw - 1 || dh < ch - 1 };
+  };
+
+  // ---------- ZOOM com a rodinha (no ponto do mouse), arrastar com zoom, dois cliques volta ----------
+  // Um grupo pode ter várias imagens iguais (revelação): o zoom vale para todas juntas.
+  const Zoom = {
+    MAX: 8,
+    group() { return { z: 1, cx: null, cy: null, items: [] }; },
+    reset(g) { g.z = 1; g.cx = null; g.cy = null; Zoom.apply(g); },
+    // item = { canvas, rec, frame }; a caixa é o pai do canvas
+    add(g, canvas, rec, frame) {
+      const old = g.items.find((it) => it.canvas === canvas);
+      if (old) { old.rec = rec; old.frame = frame; } else g.items.push({ canvas, rec, frame });
+      Zoom.apply(g);
+    },
+    calc(g, it) {
+      const box = it.canvas.parentElement, rec = it.rec;
+      if (!box || !rec) return null;
+      const cw = box.clientWidth, ch = box.clientHeight; if (!cw || !ch) return null;
+      const b = Recolor.base(cw, ch, rec.w, rec.h, rec.box, it.frame);
+      const L = Recolor.place(cw, ch, rec.w, rec.h, b.s * g.z, g.cx == null ? b.cx : g.cx, g.cy == null ? b.cy : g.cy);
+      L.cw = cw; L.ch = ch; L.bs = b.s;
+      return L;
+    },
+    apply(g) {
+      g.items = g.items.filter((it) => it.canvas.isConnected);
+      g.items.forEach((it) => {
+        const L = Zoom.calc(g, it); if (!L) return;
+        Object.assign(it.canvas.style, { position: "absolute", inset: "auto", left: L.left + "px", top: L.top + "px", width: L.dw + "px", height: L.dh + "px", objectFit: "fill", zIndex: 1, transformOrigin: "0 0" });
+        const box = it.canvas.parentElement;
+        box.classList.toggle("zoomed", g.z > 1.001);
+        if (it.canvas._gaps !== L.gaps) { it.canvas._gaps = L.gaps; Recolor.backdrop(it.canvas); }
+      });
+    },
+    // liga os eventos numa caixa (uma vez por caixa)
+    bind(box, g) {
+      if (box._zoomBound) { box._zoomGroup = g; return; }
+      box._zoomBound = true; box._zoomGroup = g;
+      box.classList.add("zoomable");
+      const itemOf = () => box._zoomGroup.items.find((it) => it.canvas.parentElement === box);
+      box.addEventListener("wheel", (e) => {
+        const G = box._zoomGroup, it = itemOf(); if (!it) return;
+        e.preventDefault();
+        const L = Zoom.calc(G, it); if (!L) return;
+        const r = box.getBoundingClientRect();
+        const kx = r.width ? L.cw / r.width : 1, ky = r.height ? L.ch / r.height : 1; // caixa pode estar escalada (animação)
+        const mx = (e.clientX - r.left) * kx - L.cw / 2, my = (e.clientY - r.top) * ky - L.ch / 2;
+        const px = L.cx + mx / L.s, py = L.cy + my / L.s;
+        const f = Math.exp(-Math.max(-120, Math.min(120, e.deltaY)) * 0.0022);
+        const z = clamp(G.z * f, 1, Zoom.MAX);
+        if (z <= 1.001) { Zoom.reset(G); return; }
+        const s2 = L.bs * z;
+        G.z = z; G.cx = px - mx / s2; G.cy = py - my / s2;
+        Zoom.apply(G);
+        const L2 = Zoom.calc(G, it); if (L2) { G.cx = L2.cx; G.cy = L2.cy; }
+      }, { passive: false });
+      let drag = null;
+      box.addEventListener("pointerdown", (e) => {
+        const G = box._zoomGroup, it = itemOf();
+        if (!it || G.z <= 1.001 || e.button !== 0) return;
+        const L = Zoom.calc(G, it); if (!L) return;
+        drag = { x: e.clientX, y: e.clientY, cx: L.cx, cy: L.cy, s: L.s, id: e.pointerId };
+        box.setPointerCapture(e.pointerId); box.classList.add("panning");
+      });
+      box.addEventListener("pointermove", (e) => {
+        if (!drag) return;
+        const G = box._zoomGroup, it = itemOf(); if (!it) return;
+        G.cx = drag.cx - (e.clientX - drag.x) / drag.s; G.cy = drag.cy - (e.clientY - drag.y) / drag.s;
+        Zoom.apply(G);
+        const L = Zoom.calc(G, it); if (L) { G.cx = L.cx; G.cy = L.cy; }
+      });
+      const up = () => { drag = null; box.classList.remove("panning"); };
+      box.addEventListener("pointerup", up); box.addEventListener("pointercancel", up); box.addEventListener("lostpointercapture", up);
+      box.addEventListener("dblclick", (e) => { e.preventDefault(); Zoom.reset(box._zoomGroup); });
+    }
+  };
+  Recolor.Zoom = Zoom;
   Recolor.loadImg = loadImg;
   Recolor.dilate = dilate;
   return Recolor;
