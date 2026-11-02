@@ -28,12 +28,8 @@
   <!-- LOBBY -->
   <section id="scr-lobby" class="screen">
     <h1 class="title" id="title"></h1>
-    <div class="subtitle" id="lobbySub">2 jogadores · quem chegar mais perto da cor original pontua!</div>
-    <div class="slots">
-      <div class="slot p1" id="slot-p1"></div>
-      <div class="vs">VS</div>
-      <div class="slot p2" id="slot-p2"></div>
-    </div>
+    <div class="subtitle" id="lobbySub">2 a 8 jogadores · quem chegar mais perto da cor original pontua!</div>
+    <div class="slots"></div>
     <div class="lobby-bottom">
       <button class="btn" id="readyBtn" style="display:none">ESTOU PRONTO!</button>
       <div id="lobbyStatus"></div>
@@ -42,10 +38,8 @@
 
   <!-- RODADA -->
   <section id="scr-play" class="screen">
-    <header class="topbar">
-      <div class="mini p1" id="pm-p1"></div>
+    <header class="topbar" id="playTop">
       <div class="round-pill" id="playRound">ROUND 1 de 10</div>
-      <div class="mini p2" id="pm-p2"></div>
     </header>
     <div class="img-card loading" id="imgCard">
       <canvas id="playCanvas"></canvas>
@@ -72,10 +66,8 @@
 
   <!-- REVELAÇÃO -->
   <section id="scr-reveal" class="screen">
-    <header class="topbar">
-      <div class="mini p1" id="rm-p1"></div>
+    <header class="topbar" id="revTop">
       <div class="round-pill" id="revRound">ROUND 1 de 10</div>
-      <div class="mini p2" id="rm-p2"></div>
     </header>
     <div class="reveal-row" id="revealRow"></div>
     <div class="verdict-zone">
