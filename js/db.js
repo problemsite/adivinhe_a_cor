@@ -179,7 +179,7 @@ window.Game = {
   slotNum: (k) => parseInt(String(k).slice(1), 10) || 0,
   slotLabel(k) { return "J" + this.slotNum(k); },
   hasPlayer: (p) => !!(p && p.cid),
-  displayName(p, k) { return (p && p.name && p.name.trim()) || this.slotLabel(k); },
+  displayName(p, k) { return (p && p.name && p.name.trim()) || ("Jogador " + this.slotNum(k)); },
   // vagas ocupadas agora, na ordem
   active(players) { return this.SLOTS.filter((k) => this.hasPlayer(players && players[k])); },
   // quem joga a partida (fica guardado no game; partidas antigas = p1 e p2)
