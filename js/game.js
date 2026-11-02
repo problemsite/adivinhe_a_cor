@@ -72,6 +72,7 @@
     const cols = ["#FF3B5C", "#FFB800", "#3BA0FF"];
     const b = "COR".split("").map((ch, j) => `<span class="ch cor" style="--i:${10 + j};color:${cols[j]}">${ch}</span>`).join("");
     $("#title").innerHTML = a + `<span class="sp"></span>` + b;
+    $("#titleHome").innerHTML = $("#title").innerHTML;
   }
 
   // ---------------- LOBBY ----------------
@@ -111,12 +112,11 @@
       const label = Game.slotLabel(k), num = Game.slotNum(k), small = size === "s8";
       if (!has) {
         el.className = `slot ${k} free${isNew ? " pop" : ""}`;
-        const canJoin = !S.me && !waitFinal;
         el.innerHTML = `<div class="tag">JOGADOR ${num}</div>
           <div class="avatar empty"><span>${label}</span></div>
           <div class="info"><div class="name" style="opacity:.45">Vaga livre</div>
           <div class="state"></div>
-          <div class="acts">${canJoin ? `<button class="btn ${k} small" data-join="${k}">ENTRAR NO LOBBY</button>` : ""}</div></div>`;
+          <div class="acts"></div></div>`;
       } else {
         el.className = `slot ${k} filled ${p.ready ? "ready" : ""}${isNew ? " pop" : ""}`;
         el.innerHTML = `<div class="tag">JOGADOR ${num}</div>
@@ -161,13 +161,8 @@
   }
 
   $(".slots").addEventListener("click", async (e) => {
-    const j = e.target.closest("[data-join]"), ed = e.target.closest("[data-edit]"), lv = e.target.closest("[data-leave]");
-    if (j) {
-      // primeiro escolhe nome e foto; a vaga só é ocupada ao clicar em ENTRAR NO LOBBY
-      SFX.click();
-      if (((S.game && S.game.phase) || "lobby") !== "lobby") return;
-      openProfile(j.dataset.join);
-    } else if (ed) { SFX.click(); openProfile(); }
+    const ed = e.target.closest("[data-edit]"), lv = e.target.closest("[data-leave]");
+    if (ed) { SFX.click(); openProfile(); }
     else if (lv) {
       SFX.click(); S.leaving = true;
       await DB.remove("players/" + S.me);
@@ -203,7 +198,7 @@
   const cropEl = $("#crop"), cropImg = $("#cropImg");
   const V = () => cropEl.clientWidth;
   function cropPlaceholder() {
-    const k = S.me || S.joinK || "p1", nm = $("#nameIn").value.trim();
+    const k = S.me || freeSlot() || "p1", nm = $("#nameIn").value.trim();
     $("#cropPh").textContent = nm ? nm[0].toUpperCase() : Game.slotLabel(k);
   }
   function cropApply() {
@@ -253,12 +248,10 @@
   $("#rmPhoto").addEventListener("click", () => { SFX.click(); Crop.img = null; Crop.removed = true; Crop.changed = true; cropPlaceholder(); cropApply(); });
   $("#nameIn").addEventListener("input", cropPlaceholder);
   $("#nameIn").addEventListener("keydown", (e) => { if (e.key === "Enter") $("#pfSave").click(); });
-  function openProfile(joinK) {
-    if (!S.me && !joinK) return;
-    S.joinK = S.me ? null : joinK;
-    const k = S.me || S.joinK, p = (S.me && S.players[S.me]) || {};
-    $("#pfTitle").textContent = S.me ? `Perfil — Jogador ${Game.slotNum(S.me)}` : "Entrar no lobby";
-    $("#pfSave").textContent = S.me ? "SALVAR" : "ENTRAR NO LOBBY";
+  function openProfile() {
+    const k = S.me || freeSlot() || "p1", p = S.me ? (S.players[S.me] || {}) : { name: $("#homeName").value.trim(), photo: S.pre.photo };
+    $("#pfTitle").textContent = S.me ? `Perfil — Jogador ${Game.slotNum(S.me)}` : "Seu perfil";
+    $("#pfSave").textContent = "SALVAR";
     cropEl.style.setProperty("--pc", colorOf(k));
     $("#nameIn").value = p.name || "";
     Crop.img = null; Crop.changed = false; Crop.removed = false; Crop.zoom = 1; $("#zoom").value = 1;
@@ -270,8 +263,7 @@
   const closeProfile = () => $("#profileModal").classList.remove("on");
   $("#pfCancel").addEventListener("click", () => { SFX.click(); closeProfile(); });
   $("#pfSave").addEventListener("click", async () => {
-    if (!S.me && !S.joinK) return closeProfile();
-    const p = (S.me && S.players[S.me]) || {};
+    const p = S.me ? (S.players[S.me] || {}) : { photo: S.pre.photo };
     let photo = p.photo || "";
     if (Crop.removed && !Crop.img) photo = "";
     else if (Crop.img && Crop.changed) {
@@ -284,25 +276,64 @@
     }
     const name = $("#nameIn").value.trim().slice(0, 16);
     if (!S.me) {
-      // entra agora: tenta a vaga escolhida; se alguém pegou antes, a próxima livre
-      if (((S.game && S.game.phase) || "lobby") !== "lobby") return closeProfile();
-      $("#pfSave").disabled = true;
-      const tryK = [S.joinK].concat(SLOTS.filter((x) => x !== S.joinK && !Game.hasPlayer(S.players[x])));
-      let ok = null;
-      for (const k of tryK) {
+      // ainda não entrou: só guarda o perfil (entra pelo botão ENTRAR NO LOBBY)
+      S.pre = { name, photo }; savePre(); $("#homeName").value = name; renderHome();
+      SFX.pop(); return closeProfile();
+    }
+    await DB.update("players/" + S.me, { name, photo });
+    S.pre = { name, photo }; savePre();
+    SFX.pop(); closeProfile();
+  });
+
+  // ---------------- ENTRADA (perfil opcional + ENTRAR NO LOBBY) ----------------
+  S.pre = (() => { try { return JSON.parse(idStore.getItem("adc_perfil")) || {}; } catch { return {}; } })();
+  function savePre() { try { idStore.setItem("adc_perfil", JSON.stringify(S.pre)); } catch { try { idStore.setItem("adc_perfil", JSON.stringify({ name: S.pre.name || "" })); } catch {} } }
+  const freeSlot = () => SLOTS.find((k) => !Game.hasPlayer(S.players[k]));
+  $("#homeName").value = S.pre.name || "";
+  function renderHome() {
+    const k = freeSlot() || "p1", nm = $("#homeName").value.trim();
+    const av = $("#homeAv");
+    av.style.setProperty("--pc", colorOf(k));
+    av.classList.toggle("has", !!S.pre.photo);
+    av.querySelectorAll("img").forEach((x) => x.remove());
+    if (S.pre.photo) { const im = new Image(); im.src = S.pre.photo; im.alt = ""; av.prepend(im); }
+    $("#homeAvTxt").textContent = nm ? nm[0].toUpperCase() : "?";
+    $("#homePhoto").textContent = S.pre.photo ? "✏️ Trocar foto" : "📷 Escolher foto";
+    const act = Game.active(S.players), ph = (S.game && S.game.phase) || "lobby", n = imageCount();
+    const cheia = act.length >= Game.MAX, jogando = ph !== "lobby";
+    const jb = $("#homeJoin");
+    jb.disabled = cheia || jogando || !!S.joining;
+    jb.textContent = S.joining ? "ENTRANDO…" : "ENTRAR NO LOBBY ▶";
+    const quem = act.length ? `<span class="hm-minis">${act.map((x) => avatarHTML(S.players[x], x)).join("")}</span>` : "";
+    let msg;
+    if (jogando) msg = "Tem uma partida acontecendo agora — espere ela acabar para entrar.";
+    else if (cheia) msg = `Sala cheia (${Game.MAX}/${Game.MAX}) — espere alguém sair.`;
+    else if (!act.length) msg = "Ninguém no lobby ainda — seja o primeiro!";
+    else msg = `<b>${act.length}/${Game.MAX}</b> no lobby`;
+    $("#homeStatus").innerHTML = quem + `<span>${msg}${n ? ` · <b>${n}</b> ${n === 1 ? "rodada" : "rodadas"}` : ""}</span>`;
+  }
+  $("#homeName").addEventListener("input", () => { S.pre.name = $("#homeName").value.trim().slice(0, 16); savePre(); renderHome(); });
+  $("#homeName").addEventListener("keydown", (e) => { if (e.key === "Enter") $("#homeJoin").click(); });
+  $("#homeAv").addEventListener("click", () => { SFX.click(); openProfile(); });
+  $("#homePhoto").addEventListener("click", () => { SFX.click(); openProfile(); });
+  $("#homeJoin").addEventListener("click", async () => {
+    if (S.me || S.joining) return;
+    if (((S.game && S.game.phase) || "lobby") !== "lobby") return toast("Espere a partida acabar para entrar!", true);
+    SFX.click(); S.joining = true; renderHome();
+    const name = $("#homeName").value.trim().slice(0, 16), photo = S.pre.photo || "";
+    let ok = null;
+    try {
+      for (const k of SLOTS.filter((x) => !Game.hasPlayer(S.players[x]))) {
         const r = await DB.txn("players/" + k, (cur) => {
           if (cur && cur.cid && cur.cid !== cid) return;
           return { cid, name, photo, ready: false, online: true, t: Date.now() };
         });
         if (r.committed) { ok = k; break; }
       }
-      $("#pfSave").disabled = false;
-      if (!ok) { toast("A sala está cheia!", true); SFX.error(); return closeProfile(); }
-      S.joinK = null; SFX.join(); closeProfile();
-      return;
-    }
-    await DB.update("players/" + S.me, { name, photo });
-    SFX.pop(); closeProfile();
+    } catch (e) { console.error(e); }
+    S.joining = false;
+    if (!ok) { toast("A sala está cheia!", true); SFX.error(); renderHome(); return; }
+    SFX.join();
   });
 
   // ---------------- SELETOR DE COR (3 barras: matiz, saturação, brilho) ----------------
@@ -618,8 +649,10 @@
     const g = S.game || {}, ph = g.phase || "lobby";
     subscribePicks(ph === "round" || ph === "reveal" ? `${g.seq}/${g.round}` : null);
     if (ph === "lobby" || iWentBack()) {
-      if (S.viewKey !== "lobby") { S.viewKey = "lobby"; goLobby(); }
+      const vk = S.me ? "lobby" : "home";
+      if (S.viewKey !== vk) { S.viewKey = vk; goLobby(); }
       else if (S.screen === "lobby") renderLobby();
+      else if (S.screen === "home") renderHome();
       return;
     }
     const key = ph + "_" + g.seq + "_" + (ph === "final" ? "" : g.round);
@@ -634,6 +667,7 @@
     newToken(); hideOverlays(); FX.clear(); closeConfirm();
     S.round = null; S.scoreOverride = null;
     Object.keys(slotSig).forEach((k) => delete slotSig[k]);
+    if (!S.me) { renderHome(); showScreen("home"); return; }
     renderLobby();
     showScreen("lobby");
   }
@@ -1011,7 +1045,7 @@
       setTimeout(() => { const gg = S.game || {}; if (gg.phase === "final" && gg.seq === g.seq) Game.resetProgress().catch(console.error); }, myDelay(60, 450));
     }
   });
-  DB.on("imageIndex", (v) => { S.imageIndex = v || {}; renderLobbyStatus(); checkAutoStart(); });
+  DB.on("imageIndex", (v) => { S.imageIndex = v || {}; renderLobbyStatus(); if (S.screen === "home") renderHome(); checkAutoStart(); });
   }
 
   // ---------------- liberado/bloqueado: controlado pela trava (/trava.js) ----------------
