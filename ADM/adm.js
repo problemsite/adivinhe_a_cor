@@ -18,9 +18,11 @@
   function av(p, k) {
     const has = Game.hasPlayer(p);
     if (!has) return `<div class="av empty">${Game.slotLabel(k)}</div>`;
-    if (p.photo) return `<div class="av ${k}"><img src="${p.photo}"></div>`;
-    return `<div class="av ${k}">${esc(p.name && p.name.trim() ? p.name.trim()[0].toUpperCase() : Game.slotLabel(k))}</div>`;
+    if (p.photo) return `<div class="av ${k}" style="background:${Game.COLORS[k]}"><img src="${p.photo}"></div>`;
+    return `<div class="av ${k}" style="background:${Game.COLORS[k]}">${esc(p.name && p.name.trim() ? p.name.trim()[0].toUpperCase() : Game.slotLabel(k))}</div>`;
   }
+  const parts = () => Game.parts(S.game, S.players);
+  const colorOf = (k) => Game.COLORS[k] || "#888";
   const ordered = () => Object.keys(S.imageIndex).sort((a, b) => (S.imageIndex[a].order || 0) - (S.imageIndex[b].order || 0) || a.localeCompare(b));
 
   $("#modePill").textContent = DB.mode === "local" ? "MODO TESTE LOCAL (configure o Firebase em js/firebase-config.js)" : "Firebase conectado";
@@ -34,7 +36,7 @@
     $("#stPhase").textContent = PH[ph] || ph;
     $("#stRound").textContent = ph === "lobby" ? "—" : ph === "final" ? `${g.total}/${g.total}` : `${(g.round || 0) + 1}/${g.total || "?"}`;
     const sc = Game.scores(S.results, g.seq);
-    $("#stScore").innerHTML = ph === "lobby" ? "—" : `<span style="color:#93c5fd">${sc.p1}</span> x <span style="color:#fca5a5">${sc.p2}</span>`;
+    $("#stScore").innerHTML = ph === "lobby" ? "—" : parts().map((k) => `<span style="color:${colorOf(k)}" title="${esc(nameOf(k))}">${sc[k] || 0}</span>`).join(" <small style='color:var(--mut)'>·</small> ");
     $("#bStart").disabled = !Object.keys(S.imageIndex).length;
     $("#bStart").textContent = ph === "lobby" ? "▶ Iniciar partida" : "▶ Reiniciar partida do zero";
     $("#bReveal").disabled = ph !== "round";
@@ -45,7 +47,7 @@
     const ph = (S.game && S.game.phase) || "lobby";
     if (ph !== "lobby" && !confirm("Reiniciar a partida do zero? O placar atual será perdido.")) return;
     const p = S.players;
-    if (!(Game.hasPlayer(p.p1) && Game.hasPlayer(p.p2)) && !confirm("Não há 2 jogadores no lobby. Iniciar mesmo assim?")) return;
+    if (Game.active(p).length < Game.MIN && !confirm("Há menos de 2 jogadores no lobby. Iniciar mesmo assim?")) return;
     await DB.update("", { picks: null, results: null });
     const r = await Game.startGame(true);
     if (!r.ok) toast(r.reason || "Não foi possível iniciar", true); else toast("Partida iniciada!");
@@ -57,11 +59,11 @@
   });
   $("#bNext").addEventListener("click", async () => { const g = S.game; if (g.phase === "reveal") await Game.nextRound(g.seq, g.round); });
   $("#bLobby").addEventListener("click", async () => {
-    if (!confirm("Voltar os dois jogadores ao lobby e apagar o progresso da partida?")) return;
+    if (!confirm("Voltar todos os jogadores ao lobby e apagar o progresso da partida?")) return;
     await Game.resetProgress(); toast("Todos de volta ao lobby. Progresso apagado.");
   });
   $("#bKickAll").addEventListener("click", async () => {
-    if (!confirm("Expulsar os DOIS jogadores (apaga as vagas no banco) e apagar o progresso?")) return;
+    if (!confirm("Expulsar TODOS os jogadores (apaga as vagas no banco) e apagar o progresso?")) return;
     await Game.kickAll(); toast("Jogadores expulsos e progresso apagado.");
   });
   $("#bWipe").addEventListener("click", async () => {
@@ -73,12 +75,17 @@
   // ---------------- JOGADORES ----------------
   function renderPlayers() {
     const sc = Game.scores(S.results, S.game.seq), ph = (S.game && S.game.phase) || "lobby";
-    $("#players").innerHTML = SLOTS.map((k) => {
+    const act = Game.active(S.players), inGame = ph === "lobby" ? [] : parts();
+    // quem entrou + quem está na partida (mesmo se saiu) ; vagas livres só como contagem
+    const show = SLOTS.filter((k) => act.includes(k) || inGame.includes(k));
+    $("#playersCount").textContent = `${act.length}/${Game.MAX}`;
+    if (!show.length) { $("#players").innerHTML = `<div class="empty-msg" style="grid-column:1/-1">Ninguém entrou ainda (2 a 8 jogadores).</div>`; return; }
+    $("#players").innerHTML = show.map((k) => {
       const p = S.players[k], has = Game.hasPlayer(p);
-      const num = k === "p1" ? 1 : 2;
-      if (!has) return `<div class="pcard ${k}"><div class="hd">${av(null, k)}<div><div class="nm" style="opacity:.5">Jogador ${num} — vaga livre</div><div class="meta">ninguém entrou ainda</div></div></div></div>`;
+      const num = Game.slotNum(k);
+      if (!has) return `<div class="pcard" style="border-color:${colorOf(k)}55"><div class="hd">${av(null, k)}<div><div class="nm" style="opacity:.5">Jogador ${num} — saiu</div><div class="meta">vaga vazia</div></div></div></div>`;
       const online = DB.mode === "local" ? "" : `<span><span class="dot ${p.online !== false ? "on" : ""}"></span>${p.online !== false ? "online" : "offline"}</span>`;
-      return `<div class="pcard ${k}">
+      return `<div class="pcard" style="border-color:${colorOf(k)}88">
         <div class="hd">${av(p, k)}<div style="min-width:0"><div class="nm">${esc(nameOf(k))}</div>
         <div class="meta">${online}<span class="${p.ready ? "tagok" : "tagno"}">${ph === "lobby" ? (p.ready ? "pronto no lobby" : "não está pronto") : "na partida"}</span>${ph !== "lobby" ? `<span>· ${sc[k]} pts</span>` : ""}</div></div></div>
         <div class="row"><button class="btn red sm" data-kick="${k}">🚪 Expulsar</button></div>
@@ -114,7 +121,7 @@
     if (!picksKey) {
       $("#liveName").textContent = "";
       $("#liveTarget").innerHTML = "";
-      $("#live").innerHTML = `<div class="empty-msg" style="grid-column:1/-1">Nenhum round acontecendo agora.</div>`;
+      $("#live").innerHTML = `<div class="empty-msg" style="grid-column:1/-1">Nenhum round acontecendo agora.</div>`; $("#live").dataset.sig = "";
       return;
     }
     const idx = S.imageIndex[liveId] || {};
@@ -125,10 +132,12 @@
       const tog = () => { $("#tgtSw").classList.toggle("show"); $("#tgtHex").style.filter = $("#tgtSw").classList.contains("show") ? "none" : "blur(5px)"; };
       $("#tgtSw").onclick = tog; $("#tgtHex").onclick = tog;
     }
-    if (!$("#live").querySelector("canvas")) {
-      $("#live").innerHTML = SLOTS.map((k) => `<div class="lcard ${k}"><canvas id="lv-${k}"></canvas><div class="inf" id="li-${k}"></div></div>`).join("");
+    const ks = parts(), lsig = ks.join(",");
+    if (!$("#live").querySelector("canvas") || $("#live").dataset.sig !== lsig) {
+      $("#live").dataset.sig = lsig;
+      $("#live").innerHTML = ks.map((k) => `<div class="lcard" style="border-color:${colorOf(k)}88"><canvas id="lv-${k}"></canvas><div class="inf" id="li-${k}"></div></div>`).join("");
     }
-    SLOTS.forEach((k) => {
+    ks.forEach((k) => {
       const pk = S.picks[k];
       const hex = (pk && pk.hex) || "#7F7F7F";
       $("#li-" + k).innerHTML = `<div class="sw" style="background:${hex}"></div><div><b>${esc(nameOf(k))}</b><br>${hex} · ${pk && pk.ready ? '<span class="tagok">PRONTO ✓</span>' : '<span class="tagno">escolhendo…</span>'}</div>`;
@@ -138,7 +147,7 @@
       requestAnimationFrame(() => {
         liveQueued = false;
         if (!liveRec) return;
-        SLOTS.forEach((k) => { const cv = $("#lv-" + k); if (cv) liveRec.renderTo(cv, (S.picks[k] && S.picks[k].hex) || "#7F7F7F"); });
+        parts().forEach((k) => { const cv = $("#lv-" + k); if (cv) liveRec.renderTo(cv, (S.picks[k] && S.picks[k].hex) || "#7F7F7F"); });
       });
     }
   }
@@ -148,13 +157,16 @@
     const g = S.game || {}, rs = (S.results && S.results[g.seq]) || {};
     const keys = Object.keys(rs).map(Number).sort((a, b) => a - b);
     if (!keys.length) { $("#results").innerHTML = `<div class="empty-msg">Ainda sem resultados nesta partida.</div>`; return; }
-    const cell = (d) => `<span class="sw" style="background:${d.hex}"></span>${d.hex} <small style="color:var(--mut)" title="ΔE = diferença de cor (0 = idêntica)">${d.acc}% · ΔE ${d.dE}</small>`;
-    $("#results").innerHTML = `<table><tr><th>#</th><th>Imagem</th><th>Original</th><th>${esc(nameOf("p1"))}</th><th>${esc(nameOf("p2"))}</th><th>Vencedor</th></tr>` +
+    const cell = (d) => d ? `<span class="sw" style="background:${d.hex}"></span>${d.hex} <small style="color:var(--mut)" title="ΔE = diferença de cor (0 = idêntica)">${d.acc}% · ΔE ${d.dE}</small>` : "—";
+    const ks = Array.from(new Set([].concat(...keys.map((i) => Game.resultKeys(rs[i])))));
+    ks.sort((a, b) => Game.slotNum(a) - Game.slotNum(b));
+    $("#results").innerHTML = `<div style="overflow-x:auto"><table><tr><th>#</th><th>Imagem</th><th>Original</th>${ks.map((k) => `<th style="color:${colorOf(k)}">${esc(nameOf(k))}</th>`).join("")}<th>Vencedor</th></tr>` +
       keys.map((i) => {
         const r = rs[i], id = (g.order || [])[i], nm = (S.imageIndex[id] && S.imageIndex[id].name) || "?";
-        const w = r.winner === "tie" ? "Empate" : nameOf(r.winner);
-        return `<tr><td>${i + 1}</td><td>${esc(nm)}</td><td><span class="sw" style="background:${r.target}"></span>${r.target}</td><td>${cell(r.p1)}</td><td>${cell(r.p2)}</td><td class="${r.winner === "p1" ? "win1" : r.winner === "p2" ? "win2" : ""}">${esc(w)}</td></tr>`;
-      }).join("") + `</table>`;
+        const ws = Game.winnersOf(r);
+        const w = ws.length === 1 ? nameOf(ws[0]) : "Empate: " + ws.map(nameOf).join(", ");
+        return `<tr><td>${i + 1}</td><td>${esc(nm)}</td><td><span class="sw" style="background:${r.target}"></span>${r.target}</td>${ks.map((k) => `<td>${cell(r[k])}</td>`).join("")}<td style="color:${ws.length === 1 ? colorOf(ws[0]) : "var(--gold)"}">${esc(w)}</td></tr>`;
+      }).join("") + `</table></div>`;
   }
 
   // ---------------- IMAGENS ----------------
