@@ -75,13 +75,12 @@
   }
 
   // ---------------- LOBBY ----------------
-  // só as vagas necessárias: quem entrou (mínimo 2 cartões) + 1 vaga livre para quem ainda não entrou
+  // só quem entrou + UM espaço livre para o próximo (até encher a sala com 8)
   function lobbyKeys() {
     const act = Game.active(S.players), ph = (S.game && S.game.phase) || "lobby";
     const free = SLOTS.filter((k) => !act.includes(k));
     const vis = act.slice();
-    while (vis.length < Game.MIN && free.length) vis.push(free.shift());
-    if (!S.me && ph === "lobby" && act.length >= Game.MIN && free.length) vis.push(free.shift());
+    if (ph === "lobby" && free.length) vis.push(free[0]);
     return vis.sort((x, y) => Game.slotNum(x) - Game.slotNum(y));
   }
   const slotSig = {};
@@ -93,8 +92,8 @@
     const keep = new Set(vis);
     box.querySelectorAll(".slot").forEach((el) => { if (!keep.has(el.dataset.k)) { delete slotSig[el.dataset.k]; el.remove(); } });
     let vs = box.querySelector(".vs");
-    if (n === 2 && !vs) { vs = document.createElement("div"); vs.className = "vs"; vs.textContent = "VS"; }
-    if (n !== 2 && vs) { vs.remove(); vs = null; }
+    // sem "VS": cada um entra no seu espaço
+    if (vs) { vs.remove(); vs = null; }
     vis.forEach((k, i) => {
       let el = $("#slot-" + k);
       if (!el) { el = document.createElement("div"); el.id = "slot-" + k; el.dataset.k = k; el.className = "slot " + k; delete slotSig[k]; }
