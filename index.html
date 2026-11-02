@@ -25,6 +25,22 @@
     <div class="loader"><i></i><i></i><i></i><i></i></div>
   </section>
 
+  <!-- ENTRADA: perfil (opcional) + ENTRAR NO LOBBY -->
+  <section id="scr-home" class="screen">
+    <h1 class="title" id="titleHome"></h1>
+    <div class="subtitle">2 a 8 jogadores · quem chegar mais perto da cor original pontua!</div>
+    <div class="home-card">
+      <div class="hm-tag">SEU PERFIL <small>(opcional)</small></div>
+      <button class="hm-av" id="homeAv" title="Escolher foto"><span id="homeAvTxt">?</span><i class="hm-cam">📷</i></button>
+      <button class="btn ghost small" id="homePhoto">📷 Escolher foto</button>
+      <input id="homeName" maxlength="16" placeholder="Seu nome" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="home-bottom">
+      <button class="btn green big" id="homeJoin">ENTRAR NO LOBBY ▶</button>
+      <div id="homeStatus"></div>
+    </div>
+  </section>
+
   <!-- LOBBY -->
   <section id="scr-lobby" class="screen">
     <h1 class="title" id="title"></h1>
