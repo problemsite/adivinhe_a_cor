@@ -171,33 +171,64 @@
 //  Operações do jogo (usadas pelo jogo e pelo ADM)
 // ============================================================
 window.Game = {
-  SLOTS: ["p1", "p2"],
-  slotLabel: (k) => (k === "p1" ? "J1" : "J2"),
+  // de 2 a 8 jogadores: vagas p1…p8 (os dados antigos com p1/p2 continuam valendo)
+  MIN: 2,
+  MAX: 8,
+  SLOTS: ["p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8"],
+  COLORS: { p1: "#3b82f6", p2: "#ef4444", p3: "#22c55e", p4: "#f59e0b", p5: "#a855f7", p6: "#ec4899", p7: "#06b6d4", p8: "#f97316" },
+  slotNum: (k) => parseInt(String(k).slice(1), 10) || 0,
+  slotLabel(k) { return "J" + this.slotNum(k); },
   hasPlayer: (p) => !!(p && p.cid),
   displayName(p, k) { return (p && p.name && p.name.trim()) || this.slotLabel(k); },
+  // vagas ocupadas agora, na ordem
+  active(players) { return this.SLOTS.filter((k) => this.hasPlayer(players && players[k])); },
+  // quem joga a partida (fica guardado no game; partidas antigas = p1 e p2)
+  parts(g, players) {
+    if (g && Array.isArray(g.players) && g.players.length) return g.players.filter((k) => this.SLOTS.includes(k));
+    if (g && g.phase && g.phase !== "lobby") return ["p1", "p2"];
+    return this.active(players);
+  },
+  // quem ganhou um round (resultados antigos: winner = p1 | p2 | tie)
+  winnersOf(r) {
+    if (!r) return [];
+    if (Array.isArray(r.winners)) return r.winners;
+    if (r.winner === "tie") return ["p1", "p2"];
+    return r.winner ? [r.winner] : [];
+  },
+  // jogadores que estão num resultado
+  resultKeys(r) {
+    if (!r) return [];
+    if (Array.isArray(r.ks)) return r.ks;
+    return this.SLOTS.filter((k) => r[k] && r[k].hex);
+  },
+  // classificação com empate (1, 1, 3…) a partir de {k: pontos}
+  ranking(sc, ks) {
+    const list = ks.slice().sort((a, b) => (sc[b] || 0) - (sc[a] || 0) || this.slotNum(a) - this.slotNum(b));
+    let place = 0, last = null;
+    return list.map((k, i) => { if (sc[k] !== last) { place = i + 1; last = sc[k]; } return { k, pts: sc[k] || 0, place }; });
+  },
 
   scores(results, seq) {
-    const sc = { p1: 0, p2: 0 };
+    const sc = {};
+    this.SLOTS.forEach((k) => (sc[k] = 0));
     const rs = (results && results[seq]) || {};
-    Object.values(rs).forEach((r) => {
-      if (!r) return;
-      if (r.winner === "p1" || r.winner === "tie") sc.p1++;
-      if (r.winner === "p2" || r.winner === "tie") sc.p2++;
-    });
+    Object.values(rs).forEach((r) => { this.winnersOf(r).forEach((k) => { if (k in sc) sc[k]++; }); });
     return sc;
   },
 
-  computeResult(picks, targetHex) {
+  computeResult(picks, targetHex, ks) {
     const t = Color.hexToRgb(targetHex);
-    const out = { target: targetHex.toUpperCase() };
-    ["p1", "p2"].forEach((k) => {
+    ks = ks && ks.length ? ks : ["p1", "p2"];
+    const out = { target: targetHex.toUpperCase(), ks };
+    ks.forEach((k) => {
       const hex = ((picks && picks[k] && picks[k].hex) || "#7F7F7F").toUpperCase();
       const d = Color.deltaE2000Rgb(Color.hexToRgb(hex), t);
       out[k] = { hex, dE: Math.round(d * 100) / 100, acc: Color.accuracy(d), chose: !!(picks && picks[k] && picks[k].touched) };
     });
-    if (out.p1.dE < out.p2.dE) out.winner = "p1";
-    else if (out.p2.dE < out.p1.dE) out.winner = "p2";
-    else out.winner = "tie";
+    // o mais perto ganha; empate = todos os que ficaram à mesma distância pontuam
+    const best = Math.min(...ks.map((k) => out[k].dE));
+    out.winners = ks.filter((k) => out[k].dE === best);
+    out.winner = out.winners.length === 1 ? out.winners[0] : "tie";
     return out;
   },
 
@@ -227,15 +258,18 @@ window.Game = {
     const idx = (await DB.get("imageIndex")) || {};
     const order = Object.keys(idx).sort((a, b) => (idx[a].order || 0) - (idx[b].order || 0) || a.localeCompare(b));
     if (!order.length) return { ok: false, reason: "Nenhuma imagem cadastrada no ADM." };
-    // cor inicial de cada round: a mesma para os dois jogadores
+    // cor inicial de cada round: a mesma para todos os jogadores
     const starts = order.map((id) => {
       const x = idx[id] || {};
       return x.start && Color.hexToRgb(x.start) ? x.start.toUpperCase() : this.farColor(x.hex || "#808080");
     });
+    const pl = (await DB.get("players")) || {};
+    const players = this.active(pl);
+    if (!force && players.length < this.MIN) return { ok: false, reason: "Precisa de pelo menos 2 jogadores." };
     const r = await DB.txn("game", (g) => {
       g = g || {};
       if (!force && g.phase && g.phase !== "lobby") return;
-      return { phase: "round", round: 0, order, starts, total: order.length, seq: (g.seq || 0) + 1, t: Date.now() };
+      return { phase: "round", round: 0, order, starts, players, total: order.length, seq: (g.seq || 0) + 1, t: Date.now() };
     });
     return { ok: r.committed };
   },
@@ -246,8 +280,9 @@ window.Game = {
     const id = g.order[round];
     const img = await DB.get("imageIndex/" + id);
     const picks = (await DB.get(`picks/${seq}/${round}`)) || {};
-    if (!force && !(picks.p1 && picks.p1.ready && picks.p2 && picks.p2.ready)) return false;
-    const res = this.computeResult(picks, (img && img.hex) || "#808080");
+    const ks = this.parts(g);
+    if (!force && !ks.every((k) => picks[k] && picks[k].ready)) return false;
+    const res = this.computeResult(picks, (img && img.hex) || "#808080", ks);
     await DB.set(`results/${seq}/${round}`, res);
     const t = await DB.txn("game", (cur) => {
       if (!cur || cur.seq !== seq || cur.round !== round || cur.phase !== "round") return;
