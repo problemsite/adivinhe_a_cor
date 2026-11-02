@@ -46,7 +46,7 @@
   .stat { background: #0003; border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
   .stat small { display: block; color: var(--mut); font-size: 12px; font-weight: 800; }
   .stat b { font-family: "Lilita One"; font-weight: 400; font-size: 22px; }
-  .players { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .players { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
   .pcard { border: 2px solid var(--line); border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 10px; background: #0002; }
   .pcard.p1 { border-color: #3b82f688; } .pcard.p2 { border-color: #ef444488; }
   .pcard .hd { display: flex; align-items: center; gap: 10px; }
@@ -58,7 +58,7 @@
   .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #777; margin-right: 4px; }
   .dot.on { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
   .tagok { color: var(--ok); } .tagno { color: var(--mut); }
-  .live { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .live { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
   .lcard { background: #0003; border-radius: 12px; border: 2px solid var(--line); overflow: hidden; }
   .lcard.p1 { border-color: #3b82f688; } .lcard.p2 { border-color: #ef444488; }
   .lcard canvas { width: 100%; display: block; background: #0004; aspect-ratio: 4/3; object-fit: contain; }
@@ -167,13 +167,13 @@
       </div>
       <div class="row">
         <button class="btn ghost" id="bLobby">↩ Voltar todos ao lobby (apaga o progresso)</button>
-        <button class="btn red" id="bKickAll">🧹 Expulsar os dois</button>
+        <button class="btn red" id="bKickAll">🧹 Expulsar todos</button>
       </div>
       <div class="hint">"Voltar ao lobby" mantém os jogadores e apaga pontos/rodadas. "Expulsar" apaga a vaga do jogador no banco e também apaga o progresso.</div>
     </section>
 
     <section class="panel">
-      <h2>👥 Jogadores</h2>
+      <h2>👥 Jogadores <small id="playersCount"></small></h2>
       <div class="players" id="players"></div>
     </section>
 
@@ -265,9 +265,9 @@
         </div>
       </div>
       <div>
-        <h3>Cor inicial (igual para os dois)</h3>
+        <h3>Cor inicial (igual para todos)</h3>
         <label class="chk" style="margin-top:8px"><input type="checkbox" id="startAuto" checked> Automática</label>
-        <div class="hint" style="margin-top:4px">Automática = a cada partida sorteia uma cor bem longe da original (a mesma para os dois jogadores).</div>
+        <div class="hint" style="margin-top:4px">Automática = a cada partida sorteia uma cor bem longe da original (a mesma para todos os jogadores).</div>
         <div class="orig" id="startRow" style="margin-top:8px">
           <div class="sw" id="startSw"></div>
           <div style="display:flex;flex-direction:column;gap:6px">
