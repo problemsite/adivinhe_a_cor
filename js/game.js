@@ -116,7 +116,7 @@
           <div class="avatar empty"><span>${label}</span></div>
           <div class="info"><div class="name" style="opacity:.45">Vaga livre</div>
           <div class="state"></div>
-          <div class="acts">${canJoin ? `<button class="btn ${k} small" data-join="${k}">${small ? "ENTRAR" : "ENTRAR COMO " + label}</button>` : ""}</div></div>`;
+          <div class="acts">${canJoin ? `<button class="btn ${k} small" data-join="${k}">ENTRAR NO LOBBY</button>` : ""}</div></div>`;
       } else {
         el.className = `slot ${k} filled ${p.ready ? "ready" : ""}${isNew ? " pop" : ""}`;
         el.innerHTML = `<div class="tag">JOGADOR ${num}</div>
@@ -163,15 +163,10 @@
   $(".slots").addEventListener("click", async (e) => {
     const j = e.target.closest("[data-join]"), ed = e.target.closest("[data-edit]"), lv = e.target.closest("[data-leave]");
     if (j) {
-      const k = j.dataset.join; SFX.click();
+      // primeiro escolhe nome e foto; a vaga só é ocupada ao clicar em ENTRAR NO LOBBY
+      SFX.click();
       if (((S.game && S.game.phase) || "lobby") !== "lobby") return;
-      const r = await DB.txn("players/" + k, (cur) => {
-        if (cur && cur.cid && cur.cid !== cid) return;
-        return cur && cur.cid === cid ? cur : { cid, name: "", photo: "", ready: false, online: true, t: Date.now() };
-      });
-      if (!r.committed) { toast("Essa vaga já foi pega!", true); SFX.error(); return; }
-      SFX.join();
-      setTimeout(openProfile, 250);
+      openProfile(j.dataset.join);
     } else if (ed) { SFX.click(); openProfile(); }
     else if (lv) {
       SFX.click(); S.leaving = true;
@@ -208,7 +203,7 @@
   const cropEl = $("#crop"), cropImg = $("#cropImg");
   const V = () => cropEl.clientWidth;
   function cropPlaceholder() {
-    const k = S.me || "p1", nm = $("#nameIn").value.trim();
+    const k = S.me || S.joinK || "p1", nm = $("#nameIn").value.trim();
     $("#cropPh").textContent = nm ? nm[0].toUpperCase() : Game.slotLabel(k);
   }
   function cropApply() {
@@ -258,11 +253,13 @@
   $("#rmPhoto").addEventListener("click", () => { SFX.click(); Crop.img = null; Crop.removed = true; Crop.changed = true; cropPlaceholder(); cropApply(); });
   $("#nameIn").addEventListener("input", cropPlaceholder);
   $("#nameIn").addEventListener("keydown", (e) => { if (e.key === "Enter") $("#pfSave").click(); });
-  function openProfile() {
-    if (!S.me) return;
-    const p = S.players[S.me] || {};
-    $("#pfTitle").textContent = `Perfil — Jogador ${Game.slotNum(S.me)}`;
-    cropEl.style.setProperty("--pc", colorOf(S.me));
+  function openProfile(joinK) {
+    if (!S.me && !joinK) return;
+    S.joinK = S.me ? null : joinK;
+    const k = S.me || S.joinK, p = (S.me && S.players[S.me]) || {};
+    $("#pfTitle").textContent = S.me ? `Perfil — Jogador ${Game.slotNum(S.me)}` : "Entrar no lobby";
+    $("#pfSave").textContent = S.me ? "SALVAR" : "ENTRAR NO LOBBY";
+    cropEl.style.setProperty("--pc", colorOf(k));
     $("#nameIn").value = p.name || "";
     Crop.img = null; Crop.changed = false; Crop.removed = false; Crop.zoom = 1; $("#zoom").value = 1;
     cropPlaceholder(); cropApply();
@@ -273,8 +270,8 @@
   const closeProfile = () => $("#profileModal").classList.remove("on");
   $("#pfCancel").addEventListener("click", () => { SFX.click(); closeProfile(); });
   $("#pfSave").addEventListener("click", async () => {
-    if (!S.me) return closeProfile();
-    const p = S.players[S.me] || {};
+    if (!S.me && !S.joinK) return closeProfile();
+    const p = (S.me && S.players[S.me]) || {};
     let photo = p.photo || "";
     if (Crop.removed && !Crop.img) photo = "";
     else if (Crop.img && Crop.changed) {
@@ -286,6 +283,24 @@
       photo = out.toDataURL("image/jpeg", 0.86);
     }
     const name = $("#nameIn").value.trim().slice(0, 16);
+    if (!S.me) {
+      // entra agora: tenta a vaga escolhida; se alguém pegou antes, a próxima livre
+      if (((S.game && S.game.phase) || "lobby") !== "lobby") return closeProfile();
+      $("#pfSave").disabled = true;
+      const tryK = [S.joinK].concat(SLOTS.filter((x) => x !== S.joinK && !Game.hasPlayer(S.players[x])));
+      let ok = null;
+      for (const k of tryK) {
+        const r = await DB.txn("players/" + k, (cur) => {
+          if (cur && cur.cid && cur.cid !== cid) return;
+          return { cid, name, photo, ready: false, online: true, t: Date.now() };
+        });
+        if (r.committed) { ok = k; break; }
+      }
+      $("#pfSave").disabled = false;
+      if (!ok) { toast("A sala está cheia!", true); SFX.error(); return closeProfile(); }
+      S.joinK = null; SFX.join(); closeProfile();
+      return;
+    }
     await DB.update("players/" + S.me, { name, photo });
     SFX.pop(); closeProfile();
   });
