@@ -524,3 +524,32 @@ body:has(#scr-play.show) #modeBadge, body:has(#scr-reveal.show) #modeBadge { dis
 .lock-box p { font-size: calc(var(--u)*3); font-weight: 900; }
 .lock-box small { color: var(--mut); font-size: calc(var(--u)*1.9); font-weight: 800; }
 .lock-drop { font-size: calc(var(--u)*10); animation: crownBob 2s ease-in-out infinite; }
+
+/* ---------- entrada (antes do lobby): perfil opcional + ENTRAR NO LOBBY ---------- */
+.home-card { position: absolute; top: 28vh; left: 50%; transform: translateX(-50%); width: calc(var(--u)*40);
+  background: var(--card); border: calc(var(--u)*0.35) solid var(--line); backdrop-filter: blur(6px); border-radius: calc(var(--u)*3.5);
+  padding: calc(var(--u)*4) calc(var(--u)*3) calc(var(--u)*3); display: flex; flex-direction: column; align-items: center; gap: calc(var(--u)*1.6);
+  animation: slotIn .55s cubic-bezier(.2,.9,.3,1.3) both; }
+.hm-tag { position: absolute; top: calc(var(--u)*-1.8); left: 50%; transform: translateX(-50%); white-space: nowrap;
+  background: #6d5cff; color: #fff; font-family: "Lilita One"; font-size: calc(var(--u)*1.9); padding: calc(var(--u)*0.4) calc(var(--u)*1.8); border-radius: 99px; }
+.hm-tag small { font-family: "Nunito", sans-serif; font-weight: 800; opacity: .8; font-size: .8em; }
+.hm-av { --pc: #6d5cff; position: relative; width: calc(var(--u)*16); height: calc(var(--u)*16); border-radius: 50%; overflow: hidden; padding: 0; border: 0; cursor: pointer;
+  background: var(--pc); display: grid; place-items: center; color: #fff; font-family: "Lilita One"; font-size: calc(var(--u)*7);
+  box-shadow: 0 0 0 calc(var(--u)*0.5) rgba(255,255,255,.18), 0 calc(var(--u)*1) calc(var(--u)*2.5) rgba(0,0,0,.35); transition: transform .15s; }
+.hm-av:hover { transform: scale(1.04); }
+.hm-av img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.hm-av.has span { display: none; }
+.hm-av span { line-height: 1; text-shadow: 0 3px 0 rgba(0,0,0,.25); }
+.hm-cam { position: absolute; right: 8%; bottom: 8%; width: 30%; height: 30%; border-radius: 50%; background: rgba(0,0,0,.55); display: grid; place-items: center;
+  font-style: normal; font-size: calc(var(--u)*2.2); }
+#homeName { width: 100%; text-align: center; font-family: "Lilita One"; font-size: calc(var(--u)*3); color: #fff; background: rgba(255,255,255,.07);
+  border: calc(var(--u)*0.3) solid var(--line); border-radius: calc(var(--u)*1.6); padding: calc(var(--u)*1.1) calc(var(--u)*1.4); outline: none; }
+#homeName:focus { border-color: #8b7bff; }
+#homeName::placeholder { color: rgba(255,255,255,.35); }
+.home-bottom { position: absolute; top: 74vh; left: 50%; transform: translateX(-50%); width: calc(var(--u)*90); display: flex; flex-direction: column; align-items: center; gap: calc(var(--u)*1.6); }
+#homeJoin { font-size: calc(var(--u)*3.6); padding: calc(var(--u)*1.8) calc(var(--u)*6); }
+#homeStatus { display: flex; align-items: center; justify-content: center; gap: calc(var(--u)*1.2); flex-wrap: wrap; color: var(--mut); font-size: calc(var(--u)*2.1); font-weight: 800; text-align: center; min-height: 1.4em; }
+#homeStatus b { color: #fff; }
+.hm-minis { display: inline-flex; }
+.hm-minis .avatar { width: calc(var(--u)*4); height: calc(var(--u)*4); font-size: calc(var(--u)*1.8); margin-left: calc(var(--u)*-0.9); box-shadow: 0 0 0 calc(var(--u)*0.3) #1b1638; }
+.hm-minis .avatar:first-child { margin-left: 0; }
